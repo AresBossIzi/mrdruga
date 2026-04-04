@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mr. Druga">
+<meta name="theme-color" content="#050505">
+<title>Mr. Druga — Discipline OS</title>
+
+:root{
+  --bg:#050505;--bg2:#0d0d0d;--bg3:#141414;--bg4:#1e1e1e;--bg5:#252525;
+  --gold:#C8A84B;--gold2:#dfc070;
+  --red:#cc3333;--green:#2db56e;--blue:#2a6aad;
+  --white:#ececec;--muted:#444;--muted2:#777;--muted3:#aaa;
+  --border:rgba(200,168,75,0.12);--border2:rgba(200,168,75,0.28);
+  --radius:10px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+}
+@font-face{font-family:'Impact','Arial Narrow',sans-serif;font-style:normal;font-weight:400 700;src:local('Impact'),local('Arial Narrow'),local('Arial');}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;overflow:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:9999;}
+#app{display:flex;flex-direction:column;height:100dvh;}
+#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(64px + var(--safe-b));scroll-behavior:smooth;}
+#screen::-webkit-scrollbar{display:none;}
+#nav{position:fixed;bottom:0;left:0;right:0;height:calc(58px + var(--safe-b));padding-bottom:var(--safe-b);background:#080808;border-top:1px solid rgba(200,168,75,0.1);display:flex;align-items:center;justify-content:space-around;z-index:100;}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:8px;font-family:'Courier New',Courier,monospace;letter-spacing:0.8px;padding:6px 10px;transition:color 0.2s;text-transform:uppercase;}
+.nav-btn .ni{font-size:17px;line-height:1;}
+.nav-btn.active{color:var(--gold);}
+.bat-header{padding:calc(16px + var(--safe-t)) 18px 0;display:flex;align-items:center;justify-content:space-between;}
+.bat-logo{display:flex;align-items:center;gap:10px;}
+.bat-symbol{width:36px;height:22px;}
+.bat-symbol svg path{fill:var(--gold);}
+.bat-name{font-family:'Impact','Arial Narrow',sans-serif;font-weight:700;font-size:21px;letter-spacing:3px;color:var(--white);text-transform:uppercase;}
+.bat-name span{color:var(--gold);}
+.bat-sub{font-size:8px;color:var(--muted2);font-family:'Courier New',Courier,monospace;letter-spacing:1px;margin-top:1px;}
+.header-right{text-align:right;}
+.header-streak{font-family:'Impact','Arial Narrow',sans-serif;font-size:20px;color:var(--gold);font-weight:600;line-height:1;}
+.header-date{font-size:8px;color:var(--muted2);font-family:'Courier New',Courier,monospace;}
+.card{margin:11px 13px 0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:13px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,168,75,0.25),transparent);}
+.card-title{font-size:9px;font-family:'Courier New',Courier,monospace;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:6px;}
+.card-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.score-wrap{display:flex;align-items:center;gap:14px;}
+.ring-outer{position:relative;width:86px;height:86px;flex-shrink:0;}
+.ring-outer svg{transform:rotate(-90deg);}
+.ring-bg{fill:none;stroke:var(--bg4);stroke-width:7;}
+.ring-fill{fill:none;stroke:var(--gold);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);}
+.ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-num{font-family:'Impact','Arial Narrow',sans-serif;font-size:24px;font-weight:700;color:var(--white);line-height:1;}
+.ring-unit{font-size:9px;color:var(--muted2);font-family:'Courier New',Courier,monospace;}
+.score-right{flex:1;}
+.day-status{font-family:'Impact','Arial Narrow',sans-serif;font-size:28px;font-weight:700;letter-spacing:1px;line-height:1;}
+.day-status.win{color:var(--green);}
+.day-status.fail{color:var(--red);}
+.day-status.pend{color:var(--muted3);}
+.score-detail{font-size:11px;color:var(--muted2);margin-top:5px;line-height:1.6;}
+.hm-banner{margin:11px 13px 0;background:linear-gradient(135deg,#1a0a0a,#200808);border:1px solid rgba(204,51,51,0.4);border-radius:var(--radius);padding:11px 13px;display:flex;align-items:center;gap:11px;position:relative;overflow:hidden;}
+.hm-banner.gold-banner{background:linear-gradient(135deg,#100e02,#1a1505);border-color:rgba(200,168,75,0.25);}
+.hm-icon{font-size:26px;flex-shrink:0;}
+.hm-text .hm-title{font-family:'Impact','Arial Narrow',sans-serif;font-size:16px;color:var(--red);letter-spacing:2px;}
+.hm-text .hm-title.gold{color:var(--gold);}
+.hm-text .hm-sub{font-size:9px;color:#885544;font-family:'Courier New',Courier,monospace;margin-top:2px;}
+.hm-text .hm-sub.gold{color:#887733;}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:11px 13px 0;}
+.qbtn{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 8px;color:var(--muted3);font-family:'Impact','Arial Narrow',sans-serif;font-size:14px;letter-spacing:1.5px;cursor:pointer;text-align:center;transition:all 0.15s;}
+.qbtn:active{opacity:0.75;transform:scale(0.97);}
+.qbtn.gold{border-color:var(--border2);color:var(--gold);}
+.qbtn.red{border-color:rgba(204,51,51,0.35);color:var(--red);}
+.qbtn-sub{font-size:8px;font-family:'Courier New',Courier,monospace;color:var(--muted);letter-spacing:0;display:block;margin-top:3px;}
+.binary-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.binary-row:last-child{border-bottom:none;padding-bottom:0;}
+.b-label{font-size:13px;color:var(--white);}
+.b-sub{font-size:10px;color:var(--muted2);margin-top:2px;}
+.tog-group{display:flex;gap:5px;flex-shrink:0;}
+.tog{padding:5px 10px;border-radius:6px;border:1px solid var(--bg5);background:var(--bg3);color:var(--muted);font-size:10px;font-family:'Courier New',Courier,monospace;cursor:pointer;transition:all 0.15s;letter-spacing:0.5px;}
+.tog.y.on{background:rgba(45,181,110,0.12);border-color:var(--green);color:var(--green);}
+.tog.n.on{background:rgba(204,51,51,0.12);border-color:var(--red);color:var(--red);}
+.sl-row{padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.sl-row:last-child{border-bottom:none;}
+.sl-top{display:flex;justify-content:space-between;margin-bottom:7px;}
+.sl-label{font-size:13px;}
+.sl-val{font-family:'Courier New',Courier,monospace;font-size:11px;color:var(--gold);}
+input[type=range]{width:100%;-webkit-appearance:none;height:3px;background:var(--bg5);border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--gold);border-radius:50%;cursor:pointer;box-shadow:0 0 5px rgba(200,168,75,0.3);}
+.inp{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;padding:9px 11px;outline:none;resize:none;transition:border-color 0.2s;}
+.inp:focus{border-color:var(--gold2);}
+.inp-label{font-size:9px;color:var(--muted2);font-family:'Courier New',Courier,monospace;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
+.inp-group{margin-bottom:10px;}
+.inp-group:last-child{margin-bottom:0;}
+.m-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.m-item:last-child{border-bottom:none;}
+.m-check{width:20px;height:20px;border:1.5px solid var(--muted);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.m-check.done{background:var(--green);border-color:var(--green);}
+.m-check.done::after{content:'✓';font-size:11px;color:#050505;font-weight:700;}
+.m-text{flex:1;font-size:13px;}
+.m-text.done{text-decoration:line-through;color:var(--muted);}
+.epills{display:flex;gap:6px;flex-wrap:wrap;}
+.epill{padding:5px 11px;border-radius:20px;border:1px solid var(--bg5);background:var(--bg3);color:var(--muted2);font-size:10px;font-family:'Courier New',Courier,monospace;cursor:pointer;transition:all 0.15s;}
+.epill.calm.on{background:rgba(45,181,110,0.12);border-color:var(--green);color:var(--green);}
+.epill.revenge.on{background:rgba(204,51,51,0.12);border-color:var(--red);color:var(--red);}
+.epill.greedy.on{background:rgba(200,168,75,0.12);border-color:var(--gold);color:var(--gold);}
+.epill.neutral.on{background:rgba(120,120,120,0.12);border-color:#888;color:#aaa;}
+.save-btn{width:calc(100% - 26px);margin:11px 13px 0;background:var(--gold);color:#050505;border:none;border-radius:var(--radius);padding:14px;font-family:'Impact','Arial Narrow',sans-serif;font-size:17px;letter-spacing:3px;cursor:pointer;transition:all 0.15s;font-weight:600;}
+.save-btn:active{transform:scale(0.98);opacity:0.88;}
+.proof-zone{border:1.5px dashed var(--border2);border-radius:8px;padding:14px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--bg3);margin-top:6px;}
+.proof-zone.locked{border-color:var(--green);border-style:solid;}
+.p-icon{font-size:22px;margin-bottom:5px;}
+.p-text{font-size:9px;font-family:'Courier New',Courier,monospace;color:var(--muted2);letter-spacing:1px;}
+.proof-preview{width:100%;border-radius:6px;margin-top:7px;max-height:110px;object-fit:cover;display:none;}
+.proof-preview.show{display:block;}
+input[type=file]{display:none;}
+.wake-big{font-family:'Impact','Arial Narrow',sans-serif;font-size:52px;font-weight:700;color:var(--white);text-align:center;letter-spacing:4px;line-height:1;}
+.wake-sub{text-align:center;font-size:9px;color:var(--muted2);font-family:'Courier New',Courier,monospace;margin-top:3px;letter-spacing:1px;}
+.wake-status{margin:11px 0 0;padding:11px;border-radius:8px;text-align:center;font-family:'Impact','Arial Narrow',sans-serif;font-size:16px;letter-spacing:2px;}
+.wake-status.wait{background:rgba(200,168,75,0.07);color:var(--gold);border:1px solid var(--border);}
+.wake-status.ok{background:rgba(45,181,110,0.1);color:var(--green);border:1px solid rgba(45,181,110,0.3);}
+.wake-status.fail{background:rgba(204,51,51,0.1);color:var(--red);border:1px solid rgba(204,51,51,0.3);}
+.imup-btn{width:100%;margin-top:11px;background:var(--green);color:#050505;border:none;border-radius:var(--radius);padding:17px;font-family:'Impact','Arial Narrow',sans-serif;font-size:21px;letter-spacing:3px;cursor:pointer;font-weight:700;transition:all 0.15s;}
+.imup-btn:active{transform:scale(0.97);}
+.p-item{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.p-item:last-child{border-bottom:none;}
+.p-ico{font-size:17px;width:28px;text-align:center;flex-shrink:0;}
+.p-txt{flex:1;font-size:12px;color:var(--muted3);}
+.p-badge{font-size:8px;font-family:'Courier New',Courier,monospace;padding:3px 7px;border-radius:4px;}
+.p-badge.act{background:rgba(204,51,51,0.15);color:var(--red);border:1px solid rgba(204,51,51,0.3);}
+.id-quote{font-family:'Impact','Arial Narrow',sans-serif;font-size:30px;line-height:1.15;letter-spacing:1px;color:var(--white);border-left:3px solid var(--gold);padding-left:13px;margin-bottom:5px;font-weight:600;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.code-item{display:flex;gap:9px;margin-bottom:7px;align-items:flex-start;}
+.ca{color:var(--gold);font-family:'Courier New',Courier,monospace;font-size:11px;flex-shrink:0;margin-top:1px;}
+.ct{font-size:12px;color:var(--muted2);line-height:1.5;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-box{background:var(--bg3);border-radius:9px;padding:12px;border:1px solid var(--border);text-align:center;}
+.stat-num{font-family:'Impact','Arial Narrow',sans-serif;font-size:32px;color:var(--gold);line-height:1;font-weight:700;}
+.stat-lbl{font-size:8px;font-family:'Courier New',Courier,monospace;color:var(--muted2);margin-top:3px;text-transform:uppercase;letter-spacing:1px;}
+.heatmap{display:flex;gap:4px;justify-content:space-between;}
+.heat-day{flex:1;text-align:center;}
+.heat-bar{height:24px;border-radius:4px;margin-bottom:3px;}
+.heat-label{font-size:8px;font-family:'Courier New',Courier,monospace;color:var(--muted2);}
+.hm-badge{display:inline-block;padding:2px 7px;border-radius:4px;background:rgba(204,51,51,0.15);border:1px solid rgba(204,51,51,0.3);color:var(--red);font-size:8px;font-family:'Courier New',Courier,monospace;letter-spacing:1px;}
+.stabs{display:flex;gap:7px;margin:11px 13px 0;overflow-x:auto;padding-bottom:2px;}
+.stabs::-webkit-scrollbar{display:none;}
+.stab{padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--muted2);font-size:9px;font-family:'Courier New',Courier,monospace;cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0;}
+.stab.active{background:var(--bg3);border-color:var(--border2);color:var(--gold);}
+.spacer{height:14px;}
+#toast{position:fixed;top:calc(18px + var(--safe-t));left:50%;transform:translateX(-50%) translateY(-100px);background:var(--bg3);border:1px solid var(--gold);border-radius:30px;padding:8px 16px;font-family:'Courier New',Courier,monospace;font-size:11px;color:var(--gold);z-index:9998;transition:transform 0.3s ease;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+</head>
+<body>
+<div id="app">
+  <div id="screen"></div>
+  <nav id="nav">
+    <button class="nav-btn active" onclick="goto('home')" id="nav-home"><span class="ni">⚡</span>HOME</button>
+    <button class="nav-btn" onclick="goto('habits')" id="nav-habits"><span class="ni">⚔️</span>HABITS</button>
+    <button class="nav-btn" onclick="goto('trade')" id="nav-trade"><span class="ni">📉</span>TRADE</button>
+    <button class="nav-btn" onclick="goto('review')" id="nav-review"><span class="ni">🌙</span>REVIEW</button>
+    <button class="nav-btn" onclick="goto('more')" id="nav-more"><span class="ni">🦇</span>MORE</button>
+  </nav>
+</div>
+<div id="toast"></div>
+<script>
+const BAT=`<svg viewBox="0 0 100 55" xmlns="http://www.w3.org/2000/svg"><path d="M50 10 C50 10 35 0 20 8 C10 13 5 20 0 18 C8 25 15 22 18 28 C12 32 8 40 10 50 C16 42 22 38 28 40 C32 42 36 48 40 52 C42 48 44 42 50 40 C56 42 58 48 60 52 C64 48 68 42 72 40 C78 38 84 42 90 50 C92 40 88 32 82 28 C85 22 92 25 100 18 C95 20 90 13 80 8 C65 0 50 10 50 10Z" fill="#C8A84B"/></svg>`;
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function todayKey(){return new Date().toISOString().split('T')[0];}
+
+function calcHardDays(){
+  const week=Math.floor(Date.now()/(7*24*3600*1000));
+  const s=week*9301+49297;
+  const wd=[1,2,3,4,5];
+  const d1=wd[s%5];
+  const d2=wd[(s>>3)%5];
+  return d1===d2?[d1,wd[(d1)%5]]:[d1,d2];
+}
+
+function freshState(){
+  const hd=calcHardDays();
+  const td=new Date().getDay();
+  return{
+    date:todayKey(),hardMode:hd.includes(td),hardModeDays:hd,
+    wakeUp:{target:localStorage.getItem('wake_time')||'06:45',confirmed:null,confirmedAt:null},
+    nonNeg:{wake:null,train:null,trade:null,content:null,missions:null},
+    proof:{train:null,work:null,shower:null},
+    missions:['','','',''],missionsDone:[false,false,false,false],
+    trading:{followed:null,emotion:null,trades:0,pnl:''},
+    physical:{done:null,intensity:5,pushed:null,nutrition:null,sleep:7},
+    dopamine:{social:0,gaming:0,youtube:0,wasted:null},
+    nightReview:{q1:'',q2:'',q3:''},
+    fasting:{start:'',end:'',done:null,difficulty:5}
+  };
+}
+
+function loadState(){
+  const raw=localStorage.getItem('mrdruga_'+todayKey());
+  if(raw){const s=JSON.parse(raw);s.wakeUp.target=localStorage.getItem('wake_time')||s.wakeUp.target;return s;}
+  return freshState();
+}
+
+let state=loadState();
+function saveState(){localStorage.setItem('mrdruga_'+todayKey(),JSON.stringify(state));}
+
+function getWeeklyData(){
+  const days=[];
+  for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);const r=localStorage.getItem('mrdruga_'+d.toISOString().split('T')[0]);if(r)days.push(JSON.parse(r));}
+  return days;
+}
+
+function getStreak(){
+  let s=0;
+  for(const d of getWeeklyData()){if(d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true))s++;else break;}
+  return s;
+}
+
+function calcScore(){
+  let pts=0,total=0;
+  ['wake','train','trade','content','missions'].forEach(k=>{total++;if(state.nonNeg[k]===true)pts++;});
+  if(state.trading.followed!==null){total++;if(state.trading.followed===true)pts++;}
+  if(state.physical.done!==null){total++;if(state.physical.done===true)pts++;}
+  if(state.physical.pushed!==null){total++;if(state.physical.pushed===true)pts++;}
+  if(state.hardMode){total++;if(state.nonNeg.train===true&&state.dopamine.social===0)pts++;}
+  return{pts,total:Math.max(total,1)};
+}
+
+function isWin(){return Object.values(state.nonNeg).every(v=>v===true);}
+
+let currentPage='home';
+function goto(page){
+  currentPage=page;
+  ['home','habits','trade','review','more'].forEach(p=>{const b=document.getElementById('nav-'+p);if(b)b.classList.toggle('active',p===page);});
+  render();
+  document.getElementById('screen').scrollTop=0;
+}
+
+function render(){
+  const s=document.getElementById('screen');
+  switch(currentPage){
+    case 'home':s.innerHTML=renderHome();break;
+    case 'habits':s.innerHTML=renderHabits();break;
+    case 'trade':s.innerHTML=renderTrade();break;
+    case 'review':s.innerHTML=renderReview();break;
+    case 'more':s.innerHTML=renderMore();break;
+  }
+  const fill=document.querySelector('.ring-fill');
+  if(fill){const{pts,total}=calcScore();const r=34,c=2*Math.PI*r;fill.style.strokeDasharray=c;fill.style.strokeDashoffset=c*(1-pts/total);}
+}
+
+function renderHome(){
+  const{pts,total}=calcScore();
+  const pct=Math.round(pts/total*100);
+  const win=isWin();
+  const r=34,c=2*Math.PI*r;
+  const streak=getStreak();
+  const now=new Date();
+  const t=now.toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'});
+  const wk=state.wakeUp;
+
+  const wakeAlert=wk.confirmed===false
+    ?`<div class="hm-banner"><div class="hm-icon">⏰</div><div class="hm-text"><div class="hm-title">WAKE FAIL — ${wk.target}</div><div class="hm-sub">Day compromised · Punishments active</div></div></div>`
+    :wk.confirmed===null
+    ?`<div class="hm-banner gold-banner"><div class="hm-icon">⏰</div><div class="hm-text"><div class="hm-title gold">WAKE TARGET: ${wk.target}</div><div class="hm-sub gold">Go to HABITS → Anti-Snooze to confirm</div></div></div>`
+    :'';
+
+  const hardBanner=state.hardMode
+    ?`<div class="hm-banner"><div class="hm-icon">🔱</div><div class="hm-text"><div class="hm-title">HARD MODE ACTIVE</div><div class="hm-sub">No social · Extra workout · +1 mission · No excuses</div></div></div>`
+    :'';
+
+  return`
+  <div class="bat-header">
+    <div class="bat-logo"><div class="bat-symbol">${BAT}</div><div><div class="bat-name">Mr. <span>Druga</span></div><div class="bat-sub">DISCIPLINE OS · ${t}</div></div></div>
+    <div class="header-right"><div class="header-streak">${streak}🔥</div><div class="header-date">DAY STREAK</div></div>
+  </div>
+  ${hardBanner}${wakeAlert}
+  <div class="card">
+    <div class="card-title">Discipline Score</div>
+    <div class="score-wrap">
+      <div class="ring-outer">
+        <svg width="86" height="86" viewBox="0 0 86 86"><circle class="ring-bg" cx="43" cy="43" r="${r}"/><circle class="ring-fill" cx="43" cy="43" r="${r}" style="stroke-dasharray:${c};stroke-dashoffset:${c}"/></svg>
+        <div class="ring-inner"><div class="ring-num">${pct}</div><div class="ring-unit">%</div></div>
+      </div>
+      <div class="score-right">
+        <div class="day-status ${win?'win':pts>0?'pend':'fail'}">${win?'✅ WIN':pts===0?'⬛ WAITING':'⚠️ IN PROGRESS'}</div>
+        <div class="score-detail">${pts} / ${total} done${state.hardMode?' · <span class="hm-badge">HARD MODE</span>':''}${!win?'<br>Miss one non-neg = ❌ FAIL':''}</div>
+      </div>
+    </div>
+  </div>
+  <div class="quick-grid">
+    <button class="qbtn gold" onclick="goto('habits')">⚔️ START DAY<span class="qbtn-sub">Non-neg + missions</span></button>
+    <button class="qbtn red" onclick="goto('review')">🌙 NIGHT REVIEW<span class="qbtn-sub">Mandatory every night</span></button>
+  </div>
+  <div class="card">
+    <div class="card-title">Today's Missions</div>
+    ${state.missions.slice(0,state.hardMode?4:3).map((m,i)=>`
+      <div class="m-item">
+        <div class="m-check ${state.missionsDone[i]?'done':''}" onclick="toggleMission(${i})"></div>
+        <div class="m-text ${state.missionsDone[i]?'done':''}">${m||'<span style="color:var(--muted)">— Set in Habits</span>'}</div>
+      </div>`).join('')}
+  </div>
+  <div class="card">
+    <div class="card-title">This Week</div>
+    <div class="heatmap">
+      ${DOW.map((d,i)=>{
+        const dd=getWeeklyData().find(x=>new Date(x.date).getDay()===i);
+        const isT=new Date().getDay()===i;
+        let bg='var(--bg3)';
+        if(dd)bg=Object.values(dd.nonNeg).every(v=>v===true)?'rgba(45,181,110,0.35)':'rgba(204,51,51,0.25)';
+        return`<div class="heat-day"><div class="heat-bar" style="background:${bg};border:${isT?'1px solid var(--gold)':'1px solid transparent'}"></div><div class="heat-label">${d[0]}</div></div>`;
+      }).join('')}
+    </div>
+  </div>
+  <div class="spacer"></div>`;
+}
+
+function renderHabits(){
+  const nn=state.nonNeg,wk=state.wakeUp;
+  return`
+  <div class="bat-header">
+    <div class="bat-logo"><div class="bat-symbol">${BAT}</div><div><div class="bat-name">Non-<span>Negotiables</span></div><div class="bat-sub">MISS ONE = FAILED</div></div></div>
+  </div>
+  <div class="card" style="border-color:rgba(200,168,75,0.22)">
+    <div class="card-title">⏰ Anti-Snooze System</div>
+    <div class="wake-big">${wk.target}</div>
+    <div class="wake-sub">FIXED WAKE TARGET · ${wk.confirmed===true?'CONFIRMED ✓':wk.confirmed===false?'FAILED ✗':'AWAITING'}</div>
+    ${wk.confirmed===null
+      ?`<button class="imup-btn" onclick="confirmWake()">⚡ I'M UP</button>
+        <div style="margin-top:7px;font-size:9px;font-family:'Courier New',Courier,monospace;color:var(--muted);text-align:center">PRESS WITHIN 3 MIN OF ALARM · MISS = AUTO FAIL</div>`
+      :wk.confirmed===true
+      ?`<div class="wake-status ok">✓ CONFIRMED AT ${wk.confirmedAt}</div>`
+      :`<div class="wake-status fail">✗ FAILED — PUNISHMENTS ACTIVE</div>`
+    }
+    <div style="margin-top:11px">
+      <div class="inp-label">Change wake target</div>
+      <input class="inp" type="time" value="${wk.target}" oninput="changeWake(this.value)" style="height:40px">
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚔️ Daily Habits</div>
+    ${[{k:'wake',l:'Wake up on time',s:'Anti-Snooze confirmed'},{k:'train',l:'Training session',s:'Proof required'},{k:'trade',l:'Trading (NY open)',s:'Present and focused'},{k:'content',l:'Content / Learning',s:'Feed your mind'},{k:'missions',l:'All missions done',s:'3/3 = WIN · less = FAIL'}].map(h=>`
+      <div class="binary-row">
+        <div><div class="b-label">${h.l}</div><div class="b-sub">${h.s}</div></div>
+        <div class="tog-group"><button class="tog y ${nn[h.k]===true?'on':''}" onclick="setNN('${h.k}',true)">YES</button><button class="tog n ${nn[h.k]===false?'on':''}" onclick="setNN('${h.k}',false)">NO</button></div>
+      </div>`).join('')}
+  </div>
+  <div class="card" style="border-color:rgba(42,106,173,0.25)">
+    <div class="card-title" style="color:#4a8acd">📷 Proof Mode</div>
+    <div style="font-size:9px;color:var(--muted2);font-family:'Courier New',Courier,monospace;margin-bottom:11px">NO PROOF = TASK DOESN'T COUNT · LOCKED AFTER SUBMIT</div>
+    ${[{k:'train',l:'Training proof',s:'Mirror pic / gym selfie'},{k:'work',l:'Work / mission proof',s:'Progress screenshot'},{k:'shower',l:'Cold shower proof',s:'Only if punishment active'}].map(p=>`
+      <div style="margin-bottom:13px">
+        <div class="b-label" style="margin-bottom:2px">${p.l}</div>
+        <div class="b-sub" style="margin-bottom:5px">${p.s}</div>
+        <div class="proof-zone ${state.proof[p.k]?'locked':''}" onclick="trigProof('${p.k}','1')">
+          <div class="p-icon">${state.proof[p.k]?'✅':'📷'}</div>
+          <div class="p-text">${state.proof[p.k]?'PROOF LOCKED — CANNOT EDIT':'TAP TO UPLOAD PROOF'}</div>
+          <img class="proof-preview ${state.proof[p.k]?'show':''}" src="${state.proof[p.k]||'#'}">
+        </div>
+        <input type="file" id="pf_${p.k}_1" accept="image/*,video/*" onchange="handleProof('${p.k}',this)">
+      </div>`).join('')}
+  </div>
+  <div class="card">
+    <div class="card-title">🎯 Daily Missions ${state.hardMode?'<span class="hm-badge">+1 HARD MODE</span>':''}</div>
+    ${[0,1,2,...(state.hardMode?[3]:[])].map(i=>`
+      <div class="inp-group">
+        <div class="inp-label">Mission ${i+1}${i===3?' — Hard Mode Extra':''}</div>
+        <input class="inp" type="text" placeholder="${i===3?'Hard mode challenge...':'Move your life forward'}" value="${state.missions[i]||''}" oninput="setMission(${i},this.value)" style="height:40px">
+      </div>`).join('')}
+    <div style="font-size:9px;color:var(--muted2);font-family:'Courier New',Courier,monospace;margin-top:3px">${state.hardMode?'4/4 = WIN (HARD MODE)':'3/3 = WIN · LESS = FAIL'}</div>
+  </div>
+  <div class="card">
+    <div class="card-title">🥊 Physical</div>
+    ${[{k:'done',l:'Training done',s:null},{k:'pushed',l:'Pushed past comfort',s:'Comfort is the enemy'}].map(h=>`
+      <div class="binary-row">
+        <div><div class="b-label">${h.l}</div>${h.s?`<div class="b-sub">${h.s}</div>`:''}</div>
+        <div class="tog-group"><button class="tog y ${state.physical[h.k]===true?'on':''}" onclick="setPhys('${h.k}',true)">YES</button><button class="tog n ${state.physical[h.k]===false?'on':''}" onclick="setPhys('${h.k}',false)">NO</button></div>
+      </div>`).join('')}
+    <div class="binary-row">
+      <div><div class="b-label">Nutrition</div></div>
+      <div class="tog-group"><button class="tog y ${state.physical.nutrition==='clean'?'on':''}" onclick="setPhysS('nutrition','clean')">CLEAN</button><button class="tog n ${state.physical.nutrition==='bad'?'on':''}" onclick="setPhysS('nutrition','bad')">BAD</button></div>
+    </div>
+    <div class="sl-row"><div class="sl-top"><span class="sl-label">Intensity</span><span class="sl-val" id="si">${state.physical.intensity}/10</span></div><input type="range" min="1" max="10" value="${state.physical.intensity}" oninput="state.physical.intensity=+this.value;document.getElementById('si').textContent=this.value+'/10';saveState()"></div>
+    <div class="sl-row"><div class="sl-top"><span class="sl-label">Sleep hours</span><span class="sl-val" id="ss">${state.physical.sleep}h</span></div><input type="range" min="3" max="12" step="0.5" value="${state.physical.sleep}" oninput="state.physical.sleep=+this.value;document.getElementById('ss').textContent=this.value+'h';saveState()"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📵 Dopamine Control ${state.hardMode?'<span class="hm-badge">0 SOCIAL TODAY</span>':''}</div>
+    <div class="binary-row">
+      <div><div class="b-label">Wasted time?</div></div>
+      <div class="tog-group"><button class="tog y ${state.dopamine.wasted===false?'on':''}" onclick="setDop('wasted',false)">NO</button><button class="tog n ${state.dopamine.wasted===true?'on':''}" onclick="setDop('wasted',true)">YES</button></div>
+    </div>
+    ${[{k:'social',l:'Social media (min)'},{k:'gaming',l:'Gaming (min)'},{k:'youtube',l:'YouTube (min)'}].map(d=>`
+      <div class="sl-row"><div class="sl-top"><span class="sl-label">${d.l}</span><span class="sl-val" id="sd_${d.k}">${state.dopamine[d.k]||0}</span></div><input type="range" min="0" max="180" step="5" value="${state.dopamine[d.k]||0}" oninput="state.dopamine['${d.k}']=+this.value;document.getElementById('sd_${d.k}').textContent=this.value;saveState()"></div>`).join('')}
+  </div>
+  <button class="save-btn" onclick="saveAll()">SAVE HABITS</button>
+  <div class="spacer"></div>`;
+}
+
+function renderTrade(){
+  const t=state.trading;
+  return`
+  <div class="bat-header">
+    <div class="bat-logo"><div class="bat-symbol">${BAT}</div><div><div class="bat-name">Trading <span>Panel</span></div><div class="bat-sub">DISCIPLINE · NOT MONEY</div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📉 Session Log</div>
+    <div class="binary-row">
+      <div><div class="b-label">Followed strategy?</div><div class="b-sub">No gut trades. No revenge entries.</div></div>
+      <div class="tog-group"><button class="tog y ${t.followed===true?'on':''}" onclick="setTrade('followed',true);render()">YES</button><button class="tog n ${t.followed===false?'on':''}" onclick="setTrade('followed',false);render()">NO</button></div>
+    </div>
+    <div style="padding:11px 0 4px">
+      <div class="inp-label" style="margin-bottom:7px">Emotional state</div>
+      <div class="epills">
+        ${['calm','neutral','greedy','revenge'].map(e=>`<button class="epill ${e} ${t.emotion===e?'on':''}" onclick="setTrade('emotion','${e}');render()">${e.toUpperCase()}</button>`).join('')}
+      </div>
+    </div>
+    <div class="sl-row" style="margin-top:3px"><div class="sl-top"><span class="sl-label">Trades taken</span><span class="sl-val" id="str">${t.trades||0}</span></div><input type="range" min="0" max="20" value="${t.trades||0}" oninput="state.trading.trades=+this.value;document.getElementById('str').textContent=this.value;saveState()"></div>
+    <div class="inp-group" style="margin-top:11px"><div class="inp-label">P&L (RON / %)</div><input class="inp" type="text" placeholder="+250 RON or -1.2%" value="${t.pnl}" oninput="setTrade('pnl',this.value)" style="height:40px"></div>
+  </div>
+  <div class="card" style="border-color:rgba(42,106,173,0.2)">
+    <div class="card-title" style="color:#4a8acd">📷 Chart Proof</div>
+    <div class="proof-zone ${state.proof.work?'locked':''}" onclick="trigProof('work','t')">
+      <div class="p-icon">${state.proof.work?'✅':'📊'}</div>
+      <div class="p-text">${state.proof.work?'PROOF LOCKED IN':'UPLOAD CHART SCREENSHOT'}</div>
+      <img class="proof-preview ${state.proof.work?'show':''}" src="${state.proof.work||'#'}">
+    </div>
+    <input type="file" id="pf_work_t" accept="image/*" onchange="handleProof('work',this)">
+  </div>
+  <div class="card" style="border-color:rgba(200,168,75,0.15)">
+    <div class="card-title">The Law</div>
+    <div style="font-size:12px;color:var(--muted2);line-height:1.9">
+      Loss + followed strategy = <span style="color:var(--green)">DISCIPLINE WIN ✓</span><br>
+      Profit + ignored strategy = <span style="color:var(--red)">DISCIPLINE FAIL ✗</span><br><br>
+      <span style="color:var(--gold);font-family:'Courier New',Courier,monospace;font-size:10px">YOU BUILD THE TRADER. THE MONEY FOLLOWS.</span>
+    </div>
+  </div>
+  <button class="save-btn" onclick="saveAll()">SAVE SESSION</button>
+  <div class="spacer"></div>`;
+}
+
+function renderReview(){
+  const nr=state.nightReview,win=isWin(),wf=state.wakeUp.confirmed===false;
+  return`
+  <div class="bat-header">
+    <div class="bat-logo"><div class="bat-symbol">${BAT}</div><div><div class="bat-name">Night <span>Review</span></div><div class="bat-sub">MANDATORY · NO SKIPPING</div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🌙 Self-Audit</div>
+    ${[{k:'q1',l:'Did I act like the man I want to become?',p:'Be honest. God sees everything.'},{k:'q2',l:'What did I do wrong today?',p:'Find the weak point. No excuses.'},{k:'q3',l:'What exactly do I fix tomorrow?',p:'One specific action. Not a vague plan.'}].map(q=>`
+      <div class="inp-group">
+        <div class="inp-label">${q.l}</div>
+        <textarea class="inp" rows="3" placeholder="${q.p}" oninput="state.nightReview['${q.k}']=this.value;saveState()">${nr[q.k]}</textarea>
+      </div>`).join('')}
+  </div>
+  ${win&&!wf
+    ?`<div class="card" style="border-color:rgba(45,181,110,0.3)"><div class="card-title" style="color:var(--green)">✅ Day Won</div><div style="font-size:13px;color:var(--muted2);line-height:1.7">You executed. Sleep well — tomorrow ${state.wakeUp.target}. Do it again.</div></div>`
+    :`<div class="card" style="border-color:rgba(204,51,51,0.35)">
+      <div class="card-title" style="color:var(--red)">🚨 Punishments Active</div>
+      ${[{i:'🚿',t:'Cold shower — tonight'},{i:'🎮',t:'No gaming tomorrow'},{i:'💪',t:'Extra workout tomorrow'},...(wf?[{i:'⏰',t:'Wake fail: 30 min earlier tomorrow'}]:[])].map(p=>`<div class="p-item"><div class="p-ico">${p.i}</div><div class="p-txt">${p.t}</div><div class="p-badge act">ACTIVE</div></div>`).join('')}
+      ${state.proof.shower
+        ?`<div style="margin-top:9px;font-size:10px;color:var(--green);font-family:'Courier New',Courier,monospace">✓ Cold shower proof submitted</div>`
+        :`<div style="margin-top:11px">
+          <div class="proof-zone" onclick="trigProof('shower','r')"><div class="p-icon">🚿</div><div class="p-text">UPLOAD COLD SHOWER PROOF</div></div>
+          <input type="file" id="pf_shower_r" accept="image/*,video/*" onchange="handleProof('shower',this)">
+        </div>`}
+      <div style="margin-top:11px;font-size:10px;color:#883333;font-family:'Courier New',Courier,monospace">Failure must cost you something.</div>
+    </div>`}
+  <button class="save-btn" onclick="saveAll()">CLOSE THE DAY</button>
+  <div class="spacer"></div>`;
+}
+
+let moreTab='identity';
+function renderMore(){
+  return`
+  <div class="bat-header">
+    <div class="bat-logo"><div class="bat-symbol">${BAT}</div><div><div class="bat-name">Mr. <span>Druga</span></div><div class="bat-sub">COMMAND CENTER</div></div></div>
+  </div>
+  <div class="stabs">
+    ${[{id:'identity',l:'🔥 Identity'},{id:'weekly',l:'📊 Weekly'},{id:'hardmode',l:'🔱 Hard Mode'},{id:'fasting',l:'📅 Fast'}].map(t=>`<button class="stab ${moreTab===t.id?'active':''}" onclick="setMoreTab('${t.id}')">${t.l}</button>`).join('')}
+  </div>
+  <div id="more-body">${renderMoreBody()}</div>
+  <div class="spacer"></div>`;
+}
+
+function setMoreTab(t){moreTab=t;const el=document.getElementById('more-body');if(el)el.innerHTML=renderMoreBody();document.querySelectorAll('.stab').forEach((b,i)=>{const ids=['identity','weekly','hardmode','fasting'];b.classList.toggle('active',ids[i]===t);});}
+
+function renderMoreBody(){
+  if(moreTab==='identity') return renderIdentity();
+  if(moreTab==='weekly') return renderWeekly();
+  if(moreTab==='hardmode') return renderHardMode();
+  if(moreTab==='fasting') return renderFasting();
+  return '';
+}
+
+function renderIdentity(){
+  const qs=["I execute even when I don't feel like it.","Comfort is the enemy.","Discipline over emotion. Always.","God sees your effort. Do not waste it.","The man you want to become is built today.","No one is coming to save you.","Faith without works is dead."];
+  const q=qs[new Date().getDay()%qs.length];
+  return`
+  <div class="card" style="margin-top:11px"><div class="card-title">Today's Word</div><div class="id-quote">${q}</div></div>
+  <div class="card"><div class="card-title">Mission</div><div style="font-size:13px;color:var(--muted2);line-height:1.8">Become a man of God. Build Ares Digital into a real business. Master trading discipline. Achieve financial independence — not for comfort, but for freedom to serve God and others with full force.<br><br><span style="color:var(--gold);font-family:'Courier New',Courier,monospace;font-size:10px">YOU ARE 17. MOST PEOPLE YOUR AGE ARE WASTING TIME. YOU ARE NOT.</span></div></div>
+  <div class="card"><div class="card-title">The Code — Never Break These</div>
+    ${['Faith first. Always. No exceptions.','Execute. Review. Improve. Repeat.','Cold calls happen even when scared.','Every client meeting — show up prepared.','No editing after submitting proof.','No skipping Hard Mode. Ever.','No negotiating with yourself in bed.'].map(c=>`<div class="code-item"><div class="ca">→</div><div class="ct">${c}</div></div>`).join('')}
+  </div>`;
+}
+
+function renderWeekly(){
+  const days=getWeeklyData();
+  const wins=days.filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
+  const fails=days.length-wins;
+  const total=Math.max(days.length,1);
+  const tDisc=days.filter(d=>d.trading&&d.trading.followed===true).length;
+  const proofD=days.filter(d=>d.proof&&d.proof.train).length;
+  return`
+  <div class="card" style="margin-top:11px"><div class="card-title">This Week</div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num" style="color:var(--green)">${wins}</div><div class="stat-lbl">Days Won</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--red)">${fails}</div><div class="stat-lbl">Days Failed</div></div>
+      <div class="stat-box"><div class="stat-num">${Math.round(wins/total*100)}%</div><div class="stat-lbl">Win Rate</div></div>
+      <div class="stat-box"><div class="stat-num">${tDisc}</div><div class="stat-lbl">Trade Discipline</div></div>
+      <div class="stat-box"><div class="stat-num">${getStreak()}</div><div class="stat-lbl">Streak</div></div>
+      <div class="stat-box"><div class="stat-num">${proofD}</div><div class="stat-lbl">Proof Days</div></div>
+    </div>
+    <div style="margin-top:12px;text-align:center;font-family:'Courier New',Courier,monospace;font-size:10px;color:${wins>=5?'var(--green)':wins>=3?'var(--gold)':'var(--red)'}">
+      ${wins>=5?'🔥 ELITE WEEK':wins>=3?'⚡ SOLID — PUSH HARDER':'⚠️ WEAK WEEK — RESET NOW'}
+    </div>
+  </div>`;
+}
+
+function renderHardMode(){
+  const hd=state.hardModeDays||[];
+  const td=new Date().getDay();
+  return`
+  <div class="card" style="margin-top:11px"><div class="card-title">🔱 Hard Mode Schedule</div>
+    <div style="font-size:9px;color:var(--muted2);font-family:'Courier New',Courier,monospace;margin-bottom:13px;line-height:1.7">RANDOMIZED WEEKLY · REVEALED MONDAY<br><span style="color:var(--muted)">The system chooses — not you.</span></div>
+    ${DOW.map((d,i)=>{const isH=hd.includes(i),isT=i===td;return`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+        <div style="font-size:13px;color:${isT?'var(--white)':'var(--muted2)'};font-weight:${isT?'500':'400'}">${d}${isT?' — TODAY':''}</div>
+        ${isH?`<span class="hm-badge" style="${isT?'background:rgba(204,51,51,0.25)':''}">HARD MODE</span>`:`<span style="font-size:9px;font-family:'Courier New',Courier,monospace;color:var(--muted)">NORMAL</span>`}
+      </div>`}).join('')}
+  </div>
+  <div class="card"><div class="card-title">Hard Mode Rules</div>
+    ${['No social media — 0 minutes','Extra workout OR longer session','+1 extra mission on top of your 3','Cannot skip or postpone','Fail on Hard Mode = double punishment'].map(r=>`<div class="code-item"><div class="ca">→</div><div class="ct">${r}</div></div>`).join('')}
+  </div>`;
+}
+
+function renderFasting(){
+  const f=state.fasting;
+  return`
+  <div class="card" style="margin-top:11px"><div class="card-title">📅 Saturday Fasting</div>
+    <div style="font-size:9px;color:var(--muted2);font-family:'Courier New',Courier,monospace;margin-bottom:13px">YOUR WEEKLY DISCIPLINE TEST</div>
+    <div class="inp-group"><div class="inp-label">Start time</div><input class="inp" type="time" value="${f.start}" oninput="state.fasting.start=this.value;saveState()" style="height:40px"></div>
+    <div class="inp-group"><div class="inp-label">End time</div><input class="inp" type="time" value="${f.end}" oninput="state.fasting.end=this.value;saveState()" style="height:40px"></div>
+    <div class="binary-row"><div><div class="b-label">Completed?</div></div><div class="tog-group"><button class="tog y ${f.done===true?'on':''}" onclick="state.fasting.done=true;saveState();setMoreTab('fasting')">YES</button><button class="tog n ${f.done===false?'on':''}" onclick="state.fasting.done=false;saveState();setMoreTab('fasting')">NO</button></div></div>
+    <div class="sl-row"><div class="sl-top"><span class="sl-label">Mental difficulty</span><span class="sl-val" id="sf">${f.difficulty}/10</span></div><input type="range" min="1" max="10" value="${f.difficulty}" oninput="state.fasting.difficulty=+this.value;document.getElementById('sf').textContent=this.value+'/10';saveState()"></div>
+    <button class="save-btn" style="width:100%;margin:12px 0 0" onclick="saveAll()">SAVE FAST</button>
+  </div>`;
+}
+
+// SETTERS
+function setNN(k,v){state.nonNeg[k]=v;saveState();render();}
+function setMission(i,v){state.missions[i]=v;saveState();}
+function toggleMission(i){state.missionsDone[i]=!state.missionsDone[i];saveState();render();}
+function setTrade(k,v){state.trading[k]=v;saveState();}
+function setPhys(k,v){state.physical[k]=v;saveState();render();}
+function setPhysS(k,v){state.physical[k]=v;saveState();render();}
+function setDop(k,v){state.dopamine[k]=v;saveState();render();}
+
+function changeWake(v){state.wakeUp.target=v;localStorage.setItem('wake_time',v);saveState();}
+
+function confirmWake(){
+  const now=new Date();
+  const t=now.toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'});
+  const[th,tm]=state.wakeUp.target.split(':').map(Number);
+  const diff=Math.abs(now.getHours()*60+now.getMinutes()-th*60-tm);
+  if(diff<=5||now.getHours()*60+now.getMinutes()<th*60+tm){
+    state.wakeUp.confirmed=true;state.wakeUp.confirmedAt=t;state.nonNeg.wake=true;
+    toast('⚡ Wake confirmed — EXECUTING');
+  }else{
+    state.wakeUp.confirmed=false;state.nonNeg.wake=false;
+    toast('❌ Too late — fail logged');
+  }
+  saveState();render();
+}
+
+function trigProof(k,sfx){const el=document.getElementById('pf_'+k+'_'+sfx);if(el)el.click();}
+
+function handleProof(k,input){
+  if(!input.files||!input.files[0])return;
+  if(state.proof[k]){toast('⚠️ Proof already locked');return;}
+  const r=new FileReader();
+  r.onload=e=>{state.proof[k]=e.target.result;saveState();toast('✓ Proof locked in');render();};
+  r.readAsDataURL(input.files[0]);
+}
+
+function saveAll(){saveState();toast('✓ Saved');}
+
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+if('serviceWorker' in navigator){
+  const sw=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response(''))));`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'})));
+}
+
+render();
+</script>
+</body>
+</html>
