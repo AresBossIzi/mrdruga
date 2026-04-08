@@ -526,7 +526,7 @@ onAuthStateChanged(auth, async (user) => {
     if(!localStorage.getItem(RESET_KEY)){
       // nuke all old XP flags
       Object.keys(localStorage).forEach(k=>{
-        if(k.startsWith('xp_')||k.startsWith('tutorial_')||k==='lifetime_xp'||k==='lastRankIdx'){
+        if(k.startsWith('xp_')||k==='lifetime_xp'||k==='lastRankIdx'){
           localStorage.removeItem(k);
         }
       });
@@ -550,7 +550,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     render();
-    if(!localStorage.getItem('tut_done_v2')){
+    if(!localStorage.getItem('tut_done_v2')&&!localStorage.getItem('tut_done')){
       setTimeout(()=>tutShow(), 800);
     }
     const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
@@ -1605,6 +1605,7 @@ function tutNext(){
 function tutSkip(){
   document.getElementById('tut').style.display='none';
   localStorage.setItem('tut_done_v2','1');
+  localStorage.setItem('tut_done','1');
 }
 </script>
 </body>
