@@ -229,9 +229,9 @@ input[type=file]{display:none;}
 /* ===== TUTORIAL ===== */
 #tutorial{position:fixed;inset:0;z-index:6000;pointer-events:none;opacity:0;transition:opacity 0.3s;}
 #tutorial.show{opacity:1;pointer-events:all;}
-.tut-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.82);}
-.tut-spotlight{position:absolute;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.82);border:2px solid var(--gold);transition:all 0.4s cubic-bezier(0.4,0,0.2,1);pointer-events:none;}
-.tut-card{position:absolute;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:20px;max-width:300px;width:85vw;box-shadow:0 8px 32px rgba(0,0,0,0.6);}
+#tut-backdrop{position:absolute;inset:0;pointer-events:all;}
+.tut-spotlight{position:absolute;border-radius:12px;border:2px solid var(--gold);z-index:6001;pointer-events:none;transition:all 0.4s cubic-bezier(0.4,0,0.2,1);box-shadow:0 0 0 2px var(--gold),0 0 20px rgba(200,168,75,0.4);}
+.tut-card{position:absolute;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:20px;max-width:300px;width:85vw;box-shadow:0 8px 32px rgba(0,0,0,0.8);z-index:6002;}
 .tut-step{font-size:9px;font-family:'Courier New',monospace;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
 .tut-title{font-family:Impact,'Arial Narrow',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-bottom:8px;line-height:1.1;}
 .tut-body{font-size:13px;color:#ccc;line-height:1.65;margin-bottom:16px;}
@@ -352,16 +352,16 @@ input[type=file]{display:none;}
 
 <!-- TUTORIAL -->
 <div id="tutorial">
-  <div class="tut-overlay" onclick="nextTutStep()"></div>
-  <div class="tut-spotlight" id="tut-spotlight"></div>
+  <canvas id="tut-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:all;" onclick="nextTutStep()"></canvas>
+  <div class="tut-spotlight" id="tut-spotlight" style="display:none"></div>
   <div class="tut-card" id="tut-card">
-    <div class="tut-step" id="tut-step">STEP 1 / 7</div>
+    <div class="tut-step" id="tut-step">STEP 1 / 8</div>
     <div class="tut-title" id="tut-title">WELCOME</div>
     <div class="tut-body" id="tut-body"></div>
     <div class="tut-footer">
       <button class="tut-skip" onclick="skipTutorial()">SKIP</button>
       <div class="tut-dots" id="tut-dots"></div>
-      <button class="tut-btn" onclick="nextTutStep()">NEXT →</button>
+      <button class="tut-btn" id="tut-btn" onclick="nextTutStep()">NEXT →</button>
     </div>
   </div>
 </div>
@@ -695,35 +695,69 @@ function startTutorial(){
   showTutStep();
 }
 
+function drawTutCanvas(rect){
+  const canvas=document.getElementById('tut-canvas');
+  if(!canvas)return;
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='rgba(0,0,0,0.82)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  if(rect){
+    // cut a hole
+    ctx.globalCompositeOperation='destination-out';
+    ctx.beginPath();
+    const pad=8;
+    const r=12;
+    const x=rect.left-pad,y=rect.top-pad,w=rect.width+pad*2,h=rect.height+pad*2;
+    ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+    ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+    ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+    ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+    ctx.closePath();ctx.fill();
+    ctx.globalCompositeOperation='source-over';
+    // gold border around hole
+    ctx.strokeStyle='#C8A84B';ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+    ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+    ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+    ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+    ctx.closePath();ctx.stroke();
+  }
+}
+
 function showTutStep(){
   const step=TUT_STEPS[tutStep];
   const total=TUT_STEPS.length;
   document.getElementById('tut-step').textContent=`STEP ${tutStep+1} / ${total}`;
   document.getElementById('tut-title').textContent=step.title;
   document.getElementById('tut-body').innerHTML=step.body;
-  const btn=document.querySelector('.tut-btn');
+  const btn=document.getElementById('tut-btn');
   if(btn)btn.textContent=step.last?'LETS GO 🔱':'NEXT →';
   const dots=document.getElementById('tut-dots');
   if(dots)dots.innerHTML=TUT_STEPS.map((_,i)=>`<div class="tut-dot ${i===tutStep?'active':''}"></div>`).join('');
-  const spotlight=document.getElementById('tut-spotlight');
   const card=document.getElementById('tut-card');
-  if(!spotlight||!card)return;
+  if(!card)return;
+
   if(step.target){
     const el=document.getElementById(step.target);
     if(el){
       const rect=el.getBoundingClientRect();
-      spotlight.style.cssText=`position:absolute;left:${rect.left-6}px;top:${rect.top-6}px;width:${rect.width+12}px;height:${rect.height+12}px;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.82);border:2px solid var(--gold);transition:all 0.4s ease;pointer-events:none;display:block;`;
+      drawTutCanvas(rect);
       const spaceAbove=rect.top;
-      if(spaceAbove>220){
-        card.style.cssText=`position:absolute;left:50%;transform:translateX(-50%);bottom:${window.innerHeight-rect.top+16}px;`;
+      if(spaceAbove>240){
+        card.style.cssText=`position:absolute;left:50%;transform:translateX(-50%);bottom:${window.innerHeight-rect.top+20}px;z-index:6002;`;
       } else {
-        card.style.cssText=`position:absolute;left:50%;transform:translateX(-50%);top:${rect.bottom+16}px;`;
+        card.style.cssText=`position:absolute;left:50%;transform:translateX(-50%);top:${rect.bottom+20}px;z-index:6002;`;
       }
+      return;
     }
-  } else {
-    spotlight.style.cssText='display:none;';
-    card.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);';
   }
+  // center — no spotlight
+  drawTutCanvas(null);
+  card.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6002;';
 }
 
 window.nextTutStep=()=>{
