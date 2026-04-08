@@ -528,13 +528,19 @@ onAuthStateChanged(auth, async (user) => {
     if(snap.exists()) username = snap.data().username;
     else username = user.email.split('@')[0];
 
-    // Reset inflated XP for everyone — v5
-    if(!localStorage.getItem('xp_reset_v5')){
+    // HARD RESET — clears everything, runs once
+    const RESET_KEY = 'hard_reset_20260408';
+    if(!localStorage.getItem(RESET_KEY)){
+      // nuke all old XP flags
+      Object.keys(localStorage).forEach(k=>{
+        if(k.startsWith('xp_')||k.startsWith('tutorial_')||k==='lifetime_xp'||k==='lastRankIdx'){
+          localStorage.removeItem(k);
+        }
+      });
       localStorage.setItem('lifetime_xp','0');
       localStorage.setItem('lastRankIdx','0');
-      localStorage.setItem('xp_reset_v5','1');
-      // also clear all daily state XP by resetting daily logs won't help
-      // just zero the stored XP and Firebase
+      localStorage.setItem(RESET_KEY,'1');
+      // reset ALL users in Firebase
       try{
         const allSnap = await getDocs(collection(db,'users'));
         const resets = [];
@@ -551,8 +557,8 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     render();
-    // show tutorial for everyone once after this update
-    if(!localStorage.getItem('tutorial_done_v3')){
+    // tutorial shows for everyone — flag was cleared in hard reset above
+    if(!localStorage.getItem('tutorial_done')){
       setTimeout(()=>startTutorial(), 800);
     }
     const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
@@ -767,7 +773,7 @@ window.nextTutStep=()=>{
 
 window.skipTutorial=()=>{
   document.getElementById('tutorial').classList.remove('show');
-  localStorage.setItem('tutorial_done_v3','1');
+  localStorage.setItem('tutorial_done','1');
 };
 // ===== END TUTORIAL =====
 
