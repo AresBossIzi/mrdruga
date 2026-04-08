@@ -229,7 +229,17 @@ input[type=file]{display:none;}
 /* XP POP */
 @keyframes xpPop{0%{opacity:0;transform:translateY(0);}20%{opacity:1;}80%{opacity:1;transform:translateY(-30px);}100%{opacity:0;transform:translateY(-50px);}}
 
-/* BADGE GRID */
+/* BADGE POPUP */
+#badge-popup{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:4000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+#badge-popup.show{opacity:1;pointer-events:all;}
+.badge-popup-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:28px 24px;text-align:center;max-width:280px;width:90%;}
+.badge-popup-emoji{font-size:52px;margin-bottom:12px;}
+.badge-popup-name{font-family:Impact,'Arial Narrow',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-bottom:8px;}
+.badge-popup-desc{font-size:14px;color:#ccc;line-height:1.6;margin-bottom:16px;}
+.badge-popup-status{font-size:11px;font-family:'Courier New',monospace;letter-spacing:1px;padding:6px 14px;border-radius:20px;}
+.badge-popup-status.earned{background:rgba(200,168,75,0.15);color:var(--gold);border:1px solid var(--border2);}
+.badge-popup-status.locked{background:rgba(255,255,255,0.05);color:#666;border:1px solid #333;}
+.badge-popup-close{margin-top:14px;font-size:11px;color:#555;font-family:'Courier New',monospace;cursor:pointer;}
 .badge-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px;}
 .badge-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
 .badge-item.earned{border-color:rgba(200,168,75,0.5);background:rgba(200,168,75,0.08);}
@@ -335,6 +345,17 @@ input[type=file]{display:none;}
   <div class="result-label" id="result-label" style="color:var(--green)">WIN</div>
   <div class="result-score" id="result-score"></div>
   <div class="result-tap">TAP TO CONTINUE</div>
+</div>
+
+<!-- BADGE POPUP -->
+<div id="badge-popup" onclick="closeBadgePopup()">
+  <div class="badge-popup-box" onclick="event.stopPropagation()">
+    <div class="badge-popup-emoji" id="bp-emoji">⭐</div>
+    <div class="badge-popup-name" id="bp-name">FIRST WIN</div>
+    <div class="badge-popup-desc" id="bp-desc">Win your first day</div>
+    <div class="badge-popup-status" id="bp-status">LOCKED</div>
+    <div class="badge-popup-close" onclick="closeBadgePopup()">TAP ANYWHERE TO CLOSE</div>
+  </div>
 </div>
 
 <!-- RANK UP OVERLAY -->
@@ -520,6 +541,28 @@ window.closeRankUp=()=>{
   document.getElementById('rankup-overlay').classList.remove('show');
 };
 
+window.showBadge=(id)=>{
+  const badge=BADGES.find(b=>b.id===id);
+  if(!badge)return;
+  const earned=getEarnedBadges().find(b=>b.id===id);
+  document.getElementById('bp-emoji').textContent=badge.emoji;
+  document.getElementById('bp-name').textContent=badge.name.toUpperCase();
+  document.getElementById('bp-desc').textContent=badge.desc;
+  const status=document.getElementById('bp-status');
+  if(earned){
+    status.textContent='✓ UNLOCKED';
+    status.className='badge-popup-status earned';
+  } else {
+    status.textContent='🔒 LOCKED';
+    status.className='badge-popup-status locked';
+  }
+  document.getElementById('badge-popup').classList.add('show');
+};
+
+window.closeBadgePopup=()=>{
+  document.getElementById('badge-popup').classList.remove('show');
+};
+
 // STATE
 const todayKey = () => new Date().toISOString().split('T')[0];
 
@@ -674,18 +717,18 @@ function showXPGain(amount){
 
 // BADGES
 const BADGES=[
-  {id:'first_win',name:'First Win',emoji:'⭐',desc:'Win your first day',check:(s,w,streak,xp)=>w>=1},
-  {id:'streak_3',name:'On a Roll',emoji:'🔥',desc:'3 day streak',check:(s,w,streak)=>streak>=3},
-  {id:'streak_7',name:'Week Warrior',emoji:'⚔️',desc:'7 day streak',check:(s,w,streak)=>streak>=7},
-  {id:'streak_30',name:'Unstoppable',emoji:'🛡️',desc:'30 day streak',check:(s,w,streak)=>streak>=30},
-  {id:'wins_10',name:'Disciplined',emoji:'💪',desc:'10 total wins',check:(s,w)=>w>=10},
-  {id:'wins_50',name:'Elite',emoji:'👑',desc:'50 total wins',check:(s,w)=>w>=50},
-  {id:'hard_mode',name:'Hard Mode Survivor',emoji:'🔱',desc:'Win a Hard Mode day',check:(s,w,streak,xp,days)=>days.some(d=>d.hardMode&&d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true))},
-  {id:'proof_5',name:'No Lies',emoji:'📷',desc:'Submit proof 5 times',check:(s,w,streak,xp,days)=>days.filter(d=>d.proof&&d.proof.train).length>=5},
-  {id:'xp_500',name:'Grinder',emoji:'⚡',desc:'Earn 500 XP',check:(s,w,streak,xp)=>xp>=500},
-  {id:'xp_2000',name:'Legend XP',emoji:'🦇',desc:'Earn 2000 XP',check:(s,w,streak,xp)=>xp>=2000},
-  {id:'early_bird',name:'Early Bird',emoji:'🌅',desc:'Wake up on time 7 days',check:(s,w,streak,xp,days)=>days.filter(d=>d.nonNeg&&d.nonNeg.wake===true).length>=7},
-  {id:'trading_god',name:'Trading Discipline',emoji:'📈',desc:'Follow strategy 10 days',check:(s,w,streak,xp,days)=>days.filter(d=>d.trading&&d.trading.followed===true).length>=10},
+  {id:'first_win',name:'First Win',emoji:'⭐',desc:'Win your first full day — all non-negotiables completed.',check:(s,w,streak,xp)=>w>=1},
+  {id:'streak_3',name:'On a Roll',emoji:'🔥',desc:'Hit a 3 day winning streak without breaking it.',check:(s,w,streak)=>streak>=3},
+  {id:'streak_7',name:'Week Warrior',emoji:'⚔️',desc:'Win 7 days in a row. No breaks, no excuses.',check:(s,w,streak)=>streak>=7},
+  {id:'streak_30',name:'Unstoppable',emoji:'🛡️',desc:'30 consecutive winning days. Elite level discipline.',check:(s,w,streak)=>streak>=30},
+  {id:'wins_10',name:'Disciplined',emoji:'💪',desc:'Accumulate 10 total winning days.',check:(s,w)=>w>=10},
+  {id:'wins_50',name:'Elite',emoji:'👑',desc:'Accumulate 50 total winning days. Top 1%.',check:(s,w)=>w>=50},
+  {id:'hard_mode',name:'Hard Mode Survivor',emoji:'🔱',desc:'Win a full Hard Mode day — 0 social media, extra workout, +1 mission, all non-negotiables.',check:(s,w,streak,xp,days)=>days.some(d=>d.hardMode&&d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true))},
+  {id:'proof_5',name:'No Lies',emoji:'📷',desc:'Submit training proof 5 times. No self-deception.',check:(s,w,streak,xp,days)=>days.filter(d=>d.proof&&d.proof.train).length>=5},
+  {id:'xp_500',name:'Grinder',emoji:'⚡',desc:'Earn a total of 500 XP across all your actions.',check:(s,w,streak,xp)=>xp>=500},
+  {id:'xp_2000',name:'Legend XP',emoji:'🦇',desc:'Earn a total of 2000 XP. Reserved for the dedicated.',check:(s,w,streak,xp)=>xp>=2000},
+  {id:'early_bird',name:'Early Bird',emoji:'🌅',desc:'Wake up on time 7 different days. Confirm in Anti-Snooze.',check:(s,w,streak,xp,days)=>days.filter(d=>d.nonNeg&&d.nonNeg.wake===true).length>=7},
+  {id:'trading_god',name:'Trading Discipline',emoji:'📈',desc:'Follow your trading strategy on 10 different days. Discipline over profit.',check:(s,w,streak,xp,days)=>days.filter(d=>d.trading&&d.trading.followed===true).length>=10},
 ];
 
 function getEarnedBadges(){
@@ -980,10 +1023,11 @@ function renderProfile(){
   </div>
   <div class="card">
     <div class="card-title">🏅 Badges (${earned.length}/${BADGES.length})</div>
+    <div style="font-size:11px;color:#888;font-family:'Courier New',monospace;margin-bottom:12px">TAP A BADGE TO SEE HOW TO UNLOCK IT</div>
     <div class="badge-grid">
       ${BADGES.map(b=>{
         const isEarned=earned.find(e=>e.id===b.id);
-        return`<div class="badge-item ${isEarned?'earned':'locked'}">
+        return`<div class="badge-item ${isEarned?'earned':'locked'}" onclick="showBadge('${b.id}')" style="cursor:pointer">
           <div class="badge-emoji">${b.emoji}</div>
           <div class="badge-name ${isEarned?'earned':''}">${b.name}</div>
         </div>`;
