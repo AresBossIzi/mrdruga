@@ -229,6 +229,12 @@ input[type=file]{display:none;}
 /* XP POP */
 @keyframes xpPop{0%{opacity:0;transform:translateY(0);}20%{opacity:1;}80%{opacity:1;transform:translateY(-30px);}100%{opacity:0;transform:translateY(-50px);}}
 
+/* USER PROFILE POPUP */
+#user-profile-popup{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:4000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+#user-profile-popup.show{opacity:1;pointer-events:all;}
+.user-profile-sheet{background:var(--bg2);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:500px;transform:translateY(100%);transition:transform 0.3s ease;}
+#user-profile-popup.show .user-profile-sheet{transform:translateY(0);}
+
 /* BADGE POPUP */
 #badge-popup{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:4000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;}
 #badge-popup.show{opacity:1;pointer-events:all;}
@@ -275,15 +281,16 @@ input[type=file]{display:none;}
 @keyframes pulse{0%,100%{opacity:0.4;}50%{opacity:1;}}
 
 /* ===== CARD ANIMATIONS ===== */
-@keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
-.card{animation:slideUp 0.35s ease both;}
-.card:nth-child(1){animation-delay:0.05s;}
-.card:nth-child(2){animation-delay:0.1s;}
-.card:nth-child(3){animation-delay:0.15s;}
-.card:nth-child(4){animation-delay:0.2s;}
-.card:nth-child(5){animation-delay:0.25s;}
-.hm-banner{animation:slideUp 0.3s ease both;}
-.quick-grid{animation:slideUp 0.3s ease 0.08s both;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.card{animation:slideUp 0.3s ease both;pointer-events:auto;}
+.card:nth-child(1){animation-delay:0.03s;}
+.card:nth-child(2){animation-delay:0.07s;}
+.card:nth-child(3){animation-delay:0.11s;}
+.card:nth-child(4){animation-delay:0.15s;}
+.card:nth-child(5){animation-delay:0.19s;}
+.hm-banner{animation:slideUp 0.25s ease both;pointer-events:auto;}
+.quick-grid{animation:slideUp 0.25s ease 0.05s both;pointer-events:auto;}
+.card *{pointer-events:auto;}
 
 /* ===== HABIT ROW FLASH ===== */
 @keyframes greenFlash{0%{background:transparent;}40%{background:rgba(60,200,122,0.18);}100%{background:transparent;}}
@@ -345,6 +352,15 @@ input[type=file]{display:none;}
   <div class="result-label" id="result-label" style="color:var(--green)">WIN</div>
   <div class="result-score" id="result-score"></div>
   <div class="result-tap">TAP TO CONTINUE</div>
+</div>
+
+<!-- USER PROFILE POPUP -->
+<div id="user-profile-popup" onclick="closeUserProfile()">
+  <div class="user-profile-sheet" onclick="event.stopPropagation()">
+    <div style="width:40px;height:4px;background:#333;border-radius:2px;margin:0 auto 20px;"></div>
+    <div id="user-profile-content"><div class="loading">LOADING...</div></div>
+    <button style="width:100%;margin-top:16px;background:transparent;border:1px solid #333;border-radius:var(--radius);padding:12px;color:#888;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;" onclick="closeUserProfile()">CLOSE</button>
+  </div>
 </div>
 
 <!-- BADGE POPUP -->
@@ -506,7 +522,110 @@ setTimeout(()=>{
   }
 }, 6000);
 
-// ANIMATION FUNCTIONS
+// Reset inflated XP from old version
+if(!localStorage.getItem('xp_rebalanced_v2')){
+  localStorage.setItem('lifetime_xp','0');
+  localStorage.setItem('xp_rebalanced_v2','1');
+  localStorage.setItem('lastRankIdx','0');
+}
+
+// SOUND EFFECTS using Web Audio API (no files needed)
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getAudio(){
+  if(!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+function playSound(type){
+  try {
+    const ctx = getAudio();
+    const g = ctx.createGain();
+    g.connect(ctx.destination);
+
+    if(type === 'check'){
+      // satisfying "ding" for mission complete
+      const o = ctx.createOscillator();
+      o.connect(g);
+      o.type = 'sine';
+      g.gain.setValueAtTime(0, ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      o.frequency.setValueAtTime(523, ctx.currentTime);
+      o.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+      o.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.5);
+    }
+    else if(type === 'yes'){
+      // soft positive click
+      const o = ctx.createOscillator();
+      o.connect(g);
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.2, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      o.frequency.setValueAtTime(440, ctx.currentTime);
+      o.frequency.setValueAtTime(550, ctx.currentTime + 0.05);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.15);
+    }
+    else if(type === 'no'){
+      // dull thud
+      const o = ctx.createOscillator();
+      o.connect(g);
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.2, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      o.frequency.setValueAtTime(220, ctx.currentTime);
+      o.frequency.setValueAtTime(180, ctx.currentTime + 0.05);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.15);
+    }
+    else if(type === 'gold'){
+      // gold flash epic chord
+      [523,659,784,1047].forEach((freq, i)=>{
+        const o = ctx.createOscillator();
+        const gn = ctx.createGain();
+        o.connect(gn); gn.connect(ctx.destination);
+        o.type = 'sine';
+        gn.gain.setValueAtTime(0, ctx.currentTime + i*0.04);
+        gn.gain.linearRampToValueAtTime(0.15, ctx.currentTime + i*0.04 + 0.02);
+        gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+        o.frequency.setValueAtTime(freq, ctx.currentTime);
+        o.start(ctx.currentTime + i*0.04);
+        o.stop(ctx.currentTime + 0.6);
+      });
+    }
+    else if(type === 'rankup'){
+      // dramatic rank up fanfare
+      [262,330,392,523,659,784].forEach((freq, i)=>{
+        const o = ctx.createOscillator();
+        const gn = ctx.createGain();
+        o.connect(gn); gn.connect(ctx.destination);
+        o.type = 'triangle';
+        gn.gain.setValueAtTime(0, ctx.currentTime + i*0.08);
+        gn.gain.linearRampToValueAtTime(0.2, ctx.currentTime + i*0.08 + 0.04);
+        gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.08 + 0.4);
+        o.frequency.setValueAtTime(freq, ctx.currentTime);
+        o.start(ctx.currentTime + i*0.08);
+        o.stop(ctx.currentTime + i*0.08 + 0.4);
+      });
+    }
+    else if(type === 'save'){
+      // clean save whoosh
+      const o = ctx.createOscillator();
+      o.connect(g);
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      o.frequency.setValueAtTime(330, ctx.currentTime);
+      o.frequency.linearRampToValueAtTime(660, ctx.currentTime + 0.2);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.3);
+    }
+  } catch(e){}
+}
 function goldFlash(){
   const el=document.getElementById('gold-flash');
   el.classList.add('show');
@@ -535,7 +654,60 @@ function showRankUp(rankIdx){
   document.getElementById('rankup-badge').textContent=`${rank.emoji} ${rank.name.toUpperCase()}`;
   document.getElementById('rankup-sub').textContent='YOU RANKED UP · TAP TO CONTINUE';
   document.getElementById('rankup-overlay').classList.add('show');
+  playSound('rankup');
 }
+
+window.closeUserProfile=()=>{
+  document.getElementById('user-profile-popup').classList.remove('show');
+};
+
+window.showUserProfile=async(uid)=>{
+  document.getElementById('user-profile-popup').classList.add('show');
+  document.getElementById('user-profile-content').innerHTML='<div class="loading">LOADING...</div>';
+  try {
+    const snap = await getDoc(doc(db,'users',uid));
+    if(!snap.exists()){document.getElementById('user-profile-content').innerHTML='<div style="color:#888;text-align:center;padding:20px;font-family:\'Courier New\',monospace">User not found</div>';return;}
+    const u = snap.data();
+    const rIdx = getRankIdx(0,0,u.totalXP||0);
+    const rank = RANKS[rIdx];
+    const nextRank = rIdx<RANKS.length-1?RANKS[rIdx+1]:null;
+    const prog = nextRank?Math.round(((u.totalXP||0)-rank.minXP)/(nextRank.minXP-rank.minXP)*100):100;
+    const xpToNext = nextRank?Math.max(0,nextRank.minXP-(u.totalXP||0)):0;
+    const userBadges = (u.badges||[]);
+
+    document.getElementById('user-profile-content').innerHTML=`
+      <div class="profile-header">
+        <div class="profile-avatar">${rank.emoji}</div>
+        <div>
+          <div class="profile-name">${(u.username||'Unknown').toUpperCase()}</div>
+          <div class="profile-rank">${rank.emoji} ${rank.name} · ${u.totalXP||0} XP</div>
+          <span class="rank-badge rank-${rIdx}" style="font-size:10px;margin-top:5px;display:inline-block">${rank.emoji} ${rank.name}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div class="stat-box" style="flex:1"><div class="stat-num">${u.currentStreak||0}</div><div class="stat-lbl">🔥 Streak</div></div>
+        <div class="stat-box" style="flex:1"><div class="stat-num">${u.totalWins||0}</div><div class="stat-lbl">✅ Wins</div></div>
+        <div class="stat-box" style="flex:1"><div class="stat-num">${u.totalXP||0}</div><div class="stat-lbl">⚡ XP</div></div>
+      </div>
+      ${nextRank?`
+      <div class="xp-bar-wrap" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;font-family:'Courier New',monospace;color:#aaa;margin-bottom:5px">
+          <span>→ ${nextRank.emoji} ${nextRank.name.toUpperCase()}</span>
+          <span style="color:var(--gold)">${xpToNext} XP to go</span>
+        </div>
+        <div class="xp-bar"><div class="xp-bar-fill" style="width:${prog}%"></div></div>
+      </div>`:''}
+      <div style="font-size:10px;font-family:'Courier New',monospace;color:#888;margin-bottom:10px;letter-spacing:1px">BADGES (${userBadges.length}/${BADGES.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${BADGES.map(b=>{
+          const has=userBadges.includes(b.id);
+          return`<div style="padding:5px 10px;border-radius:20px;font-size:11px;background:${has?'rgba(200,168,75,0.1)':'rgba(255,255,255,0.03)'};border:1px solid ${has?'rgba(200,168,75,0.35)':'#222'};color:${has?'var(--gold)':'#444'}">${b.emoji} ${b.name}</div>`;
+        }).join('')}
+      </div>`;
+  } catch(e){
+    document.getElementById('user-profile-content').innerHTML='<div style="color:#888;text-align:center;padding:20px;font-family:\'Courier New\',monospace">Failed to load</div>';
+  }
+};
 
 window.closeRankUp=()=>{
   document.getElementById('rankup-overlay').classList.remove('show');
@@ -644,39 +816,40 @@ function isWin(){return Object.values(state.nonNeg).every(v=>v===true);}
 
 // RANK SYSTEM
 const RANKS=[
-  {name:'Broke Boy',emoji:'💀',minStreak:0,minWins:0},
-  {name:'Rookie',emoji:'🟤',minStreak:3,minWins:3},
-  {name:'Grinder',emoji:'🟠',minStreak:7,minWins:10},
-  {name:'Hustler',emoji:'🟡',minStreak:14,minWins:20},
-  {name:'Soldier',emoji:'🔵',minStreak:21,minWins:35},
-  {name:'Veteran',emoji:'🟣',minStreak:30,minWins:50},
-  {name:'Enforcer',emoji:'🔴',minStreak:45,minWins:70},
-  {name:'Boss',emoji:'⚫',minStreak:60,minWins:90},
-  {name:'Kingpin',emoji:'🟥',minStreak:80,minWins:120},
-  {name:'Legend',emoji:'🦇',minStreak:100,minWins:150},
+  {name:'Broke Boy',  emoji:'💀', minXP:0},
+  {name:'Rookie',     emoji:'🟤', minXP:200},
+  {name:'Grinder',    emoji:'🟠', minXP:500},
+  {name:'Hustler',    emoji:'🟡', minXP:1000},
+  {name:'Soldier',    emoji:'🔵', minXP:1800},
+  {name:'Veteran',    emoji:'🟣', minXP:3000},
+  {name:'Enforcer',   emoji:'🔴', minXP:4500},
+  {name:'Boss',       emoji:'⚫', minXP:6000},
+  {name:'Kingpin',    emoji:'🟥', minXP:8000},
+  {name:'Legend',     emoji:'🦇', minXP:10000},
 ];
 
-function getRankIdx(streak,wins){
+function getRankIdx(streak,wins,xp){
+  if(xp===undefined) xp=calcTotalXP();
   let r=0;
-  for(let i=0;i<RANKS.length;i++){if(streak>=RANKS[i].minStreak&&wins>=RANKS[i].minWins)r=i;}
+  for(let i=0;i<RANKS.length;i++){if(xp>=RANKS[i].minXP)r=i;}
   return r;
 }
 
-function getRankProgress(streak,wins){
-  const cur=getRankIdx(streak,wins);
+function getRankProgress(streak,wins,xp){
+  if(xp===undefined) xp=calcTotalXP();
+  const cur=getRankIdx(streak,wins,xp);
   if(cur>=RANKS.length-1)return 100;
-  const next=RANKS[cur+1];
-  const sp=Math.min(streak/Math.max(next.minStreak,1),1);
-  const wp=Math.min(wins/Math.max(next.minWins,1),1);
-  return Math.round((sp+wp)/2*100);
+  const curXP=RANKS[cur].minXP;
+  const nextXP=RANKS[cur+1].minXP;
+  return Math.round((xp-curXP)/(nextXP-curXP)*100);
 }
 
 // XP SYSTEM
 const XP_ACTIONS={
-  wake:50, train:100, trade:75, content:50, missions:125,
-  followedStrategy:80, trainingDone:100, pushedComfort:60,
-  hardModeWin:200, dayWin:150, proof:50, coldCalls10:100,
-  coldCalls25:200, fastingComplete:175
+  wake:8, train:15, trade:10, content:8, missions:20,
+  followedStrategy:12, trainingDone:15, pushedComfort:8,
+  hardModeWin:40, dayWin:25, proof:8, coldCalls10:15,
+  coldCalls25:30, fastingComplete:25
 };
 
 function calcTotalXP(){
@@ -782,9 +955,10 @@ function renderHome(){
   const{pts,total}=calcScore();const pct=Math.round(pts/total*100);const win=isWin();
   const r=33,c=2*Math.PI*r;const streak=getStreak();
   const allWins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
-  const rankIdx=getRankIdx(streak,allWins);
+  const xp=calcTotalXP();
+  const rankIdx=getRankIdx(streak,allWins,xp);
   const rank=RANKS[rankIdx];
-  const progress=getRankProgress(streak,allWins);
+  const progress=getRankProgress(streak,allWins,xp);
   const nextRank=rankIdx<RANKS.length-1?RANKS[rankIdx+1]:null;
   const now=new Date();const t=now.toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'});
   const wk=state.wakeUp;
@@ -804,7 +978,7 @@ function renderHome(){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div>
         <div style="font-family:Impact,'Arial Narrow',sans-serif;font-size:22px;color:var(--white)">${rank.emoji} ${rank.name.toUpperCase()}</div>
-        <div style="font-size:10px;color:#999;font-family:'Courier New',monospace;margin-top:3px">${streak} streak · ${allWins} wins</div>
+        <div style="font-size:10px;color:#999;font-family:'Courier New',monospace;margin-top:3px">${xp} XP total</div>
       </div>
       <span class="rank-badge rank-${rankIdx}">${rank.emoji} ${rank.name}</span>
     </div>
@@ -814,7 +988,7 @@ function renderHome(){
         <span>NEXT: ${nextRank.emoji} ${nextRank.name.toUpperCase()}</span><span>${progress}%</span>
       </div>
       <div class="rank-progress-bar"><div class="rank-progress-fill" style="width:${progress}%"></div></div>
-      <div style="font-size:9px;color:#666;font-family:'Courier New',monospace;margin-top:4px">Need ${nextRank.minStreak}🔥 streak + ${nextRank.minWins} wins</div>
+      <div style="font-size:9px;color:#666;font-family:'Courier New',monospace;margin-top:4px">${Math.max(0,nextRank.minXP-xp)} XP needed</div>
     </div>`:`<div style="font-size:11px;color:var(--gold);font-family:'Courier New',monospace">🦇 MAX RANK — LEGEND STATUS</div>`}
   </div>
   <div class="card">
@@ -991,12 +1165,12 @@ function renderProfile(){
   const days=getWeeklyData();
   const wins=days.filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
   const xp=calcTotalXP();
-  const rankIdx=getRankIdx(streak,wins);
+  const rankIdx=getRankIdx(streak,wins,xp);
   const rank=RANKS[rankIdx];
   const nextRank=rankIdx<RANKS.length-1?RANKS[rankIdx+1]:null;
-  const progress=getRankProgress(streak,wins);
+  const progress=getRankProgress(streak,wins,xp);
   const earned=getEarnedBadges();
-  const xpToNext=nextRank?Math.max(0,(nextRank.minStreak*150+nextRank.minWins*50)-xp):0;
+  const xpToNext=nextRank?Math.max(0,nextRank.minXP-xp):0;
 
   return`
   <div class="card" style="margin-top:11px">
@@ -1016,9 +1190,14 @@ function renderProfile(){
     ${nextRank?`
     <div class="xp-bar-wrap">
       <div style="display:flex;justify-content:space-between;font-size:10px;font-family:'Courier New',monospace;color:#aaa">
-        <span>→ ${nextRank.emoji} ${nextRank.name}</span><span>${progress}%</span>
+        <span>→ ${nextRank.emoji} ${nextRank.name.toUpperCase()}</span><span>${progress}%</span>
       </div>
       <div class="xp-bar"><div class="xp-bar-fill" style="width:${progress}%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px">
+        <span style="font-size:10px;color:#666;font-family:'Courier New',monospace">${xp} XP</span>
+        <span style="font-size:11px;color:var(--gold);font-family:'Courier New',monospace;font-weight:bold">${xpToNext} XP to go</span>
+        <span style="font-size:10px;color:#666;font-family:'Courier New',monospace">${nextRank.minXP} XP</span>
+      </div>
     </div>`:`<div style="font-size:12px;color:var(--gold);font-family:'Courier New',monospace;text-align:center;padding:8px">🦇 MAX RANK ACHIEVED — LEGEND</div>`}
   </div>
   <div class="card">
@@ -1037,10 +1216,10 @@ function renderProfile(){
   <div class="card">
     <div class="card-title">⚡ XP Guide</div>
     ${Object.entries({
-      'Wake on time':'50 XP','Training session':'100 XP','Trading session':'75 XP',
-      'Content/Learning':'50 XP','All missions':'125 XP','Follow strategy':'80 XP',
-      'Day WIN':'150 XP','Hard Mode WIN':'200 XP','Proof submitted':'50 XP',
-      '10+ cold calls':'100 XP','25+ cold calls':'200 XP'
+      'Wake on time':'8 XP','Training session':'15 XP','Trading session':'10 XP',
+      'Content/Learning':'8 XP','All missions':'20 XP','Follow strategy':'12 XP',
+      'Day WIN':'25 XP','Hard Mode WIN':'40 XP','Proof submitted':'8 XP',
+      '10+ cold calls':'15 XP','25+ cold calls':'30 XP','Saturday fast':'25 XP'
     }).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px"><span style="color:#ddd">${k}</span><span style="color:var(--gold);font-family:'Courier New',monospace">${v}</span></div>`).join('')}
   </div>`;
 }
@@ -1105,8 +1284,8 @@ async function renderLeaderboard(){
         const rank=RANKS[rIdx];
         return`<div class="lb-item">
           <div class="lb-rank ${rankClass[i]||''}">${medals[i]||i+1}</div>
-          <div class="lb-info">
-            <div class="lb-name ${u.id===currentUser?.uid?'me':''}">${u.username||'Unknown'}${u.id===currentUser?.uid?' (you)':''}</div>
+          <div class="lb-info" onclick="${u.id!==currentUser?.uid?`showUserProfile('${u.id}')`:''}" style="${u.id!==currentUser?.uid?'cursor:pointer':''}">
+            <div class="lb-name ${u.id===currentUser?.uid?'me':''}">${u.username||'Unknown'}${u.id===currentUser?.uid?' (you)':' →'}</div>
             <div style="margin-top:3px"><span class="rank-badge rank-${rIdx}" style="font-size:9px;padding:2px 7px">${rank.emoji} ${rank.name}</span></div>
             <div class="lb-stats" style="margin-top:3px">${u.totalWins||0} wins · ${u.currentStreak||0}🔥 streak</div>
           </div>
@@ -1120,7 +1299,7 @@ async function renderLeaderboard(){
       <div class="card-title">Rank Guide</div>
       ${RANKS.map((r,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
         <span class="rank-badge rank-${i}" style="font-size:9px;padding:2px 8px">${r.emoji} ${r.name}</span>
-        <span style="font-size:9px;color:#777;font-family:'Courier New',monospace">${r.minStreak}🔥 + ${r.minWins} wins</span>
+        <span style="font-size:11px;color:#bbb;font-family:'Courier New',monospace">${r.minXP} XP</span>
       </div>`).join('')}
     </div>`;
   } catch(e){
@@ -1174,7 +1353,7 @@ function renderHardMode(){
 // SETTERS
 window.setNN=(k,v)=>{
   state.nonNeg[k]=v;saveState();render();
-  // flash the row
+  playSound(v?'yes':'no');
   setTimeout(()=>{
     const rows=document.querySelectorAll('.binary-row');
     rows.forEach(r=>{if(r.querySelector(`[onclick*="${k}"]`)){r.classList.add(v?'flash-yes':'flash-no');setTimeout(()=>r.classList.remove('flash-yes','flash-no'),600);}});
@@ -1182,7 +1361,9 @@ window.setNN=(k,v)=>{
 };
 window.setMission=(i,v)=>{state.missions[i]=v;saveState();};
 window.toggleMission=(i)=>{
-  state.missionsDone[i]=!state.missionsDone[i];saveState();render();
+  state.missionsDone[i]=!state.missionsDone[i];
+  playSound(state.missionsDone[i]?'check':'no');
+  saveState();render();
   setTimeout(()=>{
     const checks=document.querySelectorAll('.m-check');
     if(checks[i]){checks[i].classList.add('bounce');setTimeout(()=>checks[i].classList.remove('bounce'),500);}
@@ -1213,11 +1394,13 @@ window.confirmWake=()=>{
     state.wakeUp.confirmedAt=fmt(ah,am);
     state.nonNeg.wake=true;
     goldFlash();
+    playSound('gold');
     toast(`⚡ Wake confirmed — ${fmt(ah,am)}`);
   } else {
     state.wakeUp.confirmed=false;
     state.wakeUp.confirmedAt=fmt(ah,am);
     state.nonNeg.wake=false;
+    playSound('no');
     toast(`❌ Woke up late (${fmt(ah,am)} vs target ${state.wakeUp.target})`);
   }
   saveState();render();
@@ -1234,7 +1417,7 @@ window.handleProof=(k,input)=>{
 
 window.saveAll=()=>{
   saveState();
-  // check rank up
+  playSound('save');
   const streak=getStreak();
   const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
   const newRankIdx=getRankIdx(streak,wins);
