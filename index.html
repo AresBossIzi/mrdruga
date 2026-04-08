@@ -552,7 +552,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     render();
-    setTimeout(()=>tutShow(), 800);
+    setTimeout(()=>window.tutShow(), 800);
     const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
     const xp=calcTotalXP();
     const newRankIdx=getRankIdx(streak,wins,xp);
@@ -1568,7 +1568,7 @@ const TSTEPS=[
 ];
 let tStep=0;
 
-function tutShow(){
+window.tutShow=function(){
   tStep=0;
   document.getElementById('tut').classList.add('on');
   tutRender();
