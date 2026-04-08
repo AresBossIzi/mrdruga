@@ -987,13 +987,24 @@ function render(){
   const s=document.getElementById('screen');
   switch(currentPage){
     case 'home':s.innerHTML=renderHome();break;
-    case 'habits':s.innerHTML=renderHabits();break;
+    case 'habits':s.innerHTML=renderHabits();attachProofListeners();break;
     case 'trade':s.innerHTML=renderTrade();break;
     case 'review':s.innerHTML=renderReview();break;
     case 'more':s.innerHTML=renderMore();loadMoreAsync();break;
   }
   const fill=document.querySelector('.ring-fill');
   if(fill){const{pts,total}=calcScore();const r=33,c=2*Math.PI*r;fill.style.strokeDasharray=c;fill.style.strokeDashoffset=c*(1-pts/total);}
+}
+
+function attachProofListeners(){
+  ['train','work','shower'].forEach(k=>{
+    const el=document.getElementById('pf_'+k);
+    if(el){
+      el.addEventListener('change',function(){
+        handleProof(k,this);
+      });
+    }
+  });
 }
 
 function renderHome(){
@@ -1108,7 +1119,7 @@ function renderHabits(){
           <div class="p-icon" id="proof-icon-${p.k}">${state.proof[p.k]?'✅':'📷'}</div>
           <div class="p-text" id="proof-text-${p.k}">${state.proof[p.k]?'PROOF LOCKED — SUBMITTED':'TAP TO UPLOAD'}</div>
         </div>
-        <input type="file" id="pf_${p.k}" accept="image/*,video/*" onchange="handleProof('${p.k}',this)">
+        <input type="file" id="pf_${p.k}" accept="image/*,video/*">
       </div>`).join('')}
   </div>
   <div class="card">
