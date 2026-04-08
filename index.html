@@ -550,9 +550,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     render();
-    if(!localStorage.getItem('tut_done_v2')&&!localStorage.getItem('tut_done')){
-      setTimeout(()=>tutShow(), 800);
-    }
+    // tutorial handled by plain script below
     const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
     const xp=calcTotalXP();
     const newRankIdx=getRankIdx(streak,wins,xp);
@@ -1566,7 +1564,20 @@ function toast(msg){
 </script>
 
 <script>
-// TUTORIAL — plain script, not module
+// Auto-show tutorial when app becomes visible, only once
+(function(){
+  var shown = false;
+  var interval = setInterval(function(){
+    var app = document.getElementById('app');
+    if(app && !app.classList.contains('hidden')){
+      clearInterval(interval);
+      if(!shown && !localStorage.getItem('tut_done') && !localStorage.getItem('tut_done_v2')){
+        shown = true;
+        setTimeout(tutShow, 800);
+      }
+    }
+  }, 200);
+})();
 var TSTEPS=[
   {t:'WELCOME, SOLDIER',b:'This is your <b>daily discipline system</b>. Every day you WIN or FAIL. No grey area. No excuses.'},
   {t:'DAILY HABITS',b:'Open <b>HABITS</b> every morning. Complete all 5 non-negotiables. <b>Miss one = automatic FAIL.</b>'},
