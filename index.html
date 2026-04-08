@@ -1566,17 +1566,19 @@ function toast(msg){
 <script>
 // Auto-show tutorial when app becomes visible, only once
 (function(){
+  var KEY = 'mrdruga_tut_v1';
   var shown = false;
   var interval = setInterval(function(){
     var app = document.getElementById('app');
     if(app && !app.classList.contains('hidden')){
       clearInterval(interval);
-      if(!shown && !localStorage.getItem('tut_done') && !localStorage.getItem('tut_done_v2')){
+      var done = localStorage.getItem(KEY);
+      if(!shown && !done){
         shown = true;
         setTimeout(tutShow, 800);
       }
     }
-  }, 200);
+  }, 300);
 })();
 var TSTEPS=[
   {t:'WELCOME, SOLDIER',b:'This is your <b>daily discipline system</b>. Every day you WIN or FAIL. No grey area. No excuses.'},
@@ -1615,8 +1617,7 @@ function tutNext(){
 
 function tutSkip(){
   document.getElementById('tut').style.display='none';
-  localStorage.setItem('tut_done_v2','1');
-  localStorage.setItem('tut_done','1');
+  localStorage.setItem('mrdruga_tut_v1','1');
 }
 </script>
 </body>
