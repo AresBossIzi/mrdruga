@@ -1553,52 +1553,57 @@ window.doLogout=async()=>{
   toast('Signed out');
 };
 
-// ===== TUTORIAL =====
-const TSTEPS=[
-  {t:'WELCOME, SOLDIER',b:'This is your <b>daily discipline system</b>. Every day you WIN or FAIL. No grey area. No excuses. Tap NEXT to learn how it works.'},
-  {t:'DAILY HABITS',b:'Open <b>HABITS</b> every morning. Complete all 5 non-negotiables — wake up, train, trade, learn, missions. <b>Miss one = automatic FAIL.</b>'},
-  {t:'PROOF MODE',b:'<b>No proof = task doesn\'t count.</b> After training, upload a photo. After work, screenshot your progress. Truth only.'},
-  {t:'XP & RANKS',b:'Every action earns <b>XP</b>. Save habits = XP awarded. You start as <b>💀 Broke Boy</b>. Grind to <b>🦇 Legend</b> at 10,000 XP.'},
-  {t:'HARD MODE',b:'<b>2 random days per week</b> are Hard Mode. 0 social media, extra workout, +1 mission. The system picks the days — not you.'},
-  {t:'LEADERBOARD',b:'Send the app link to your friends. They sign up and appear on the leaderboard. Compete on XP and rank. <b>Weakness is visible.</b>'},
-  {t:'PUNISHMENT SYSTEM',b:'Fail the day? <b>Cold shower. No gaming. Extra workout.</b> Open NIGHT REVIEW to log it. Failure must cost something.'},
-  {t:'NOW EXECUTE.',b:'Stop reading. <b>Open HABITS, set your wake time, start your first day.</b> The clock is already running. No excuses.',last:true},
-];
-let tStep=0;
-
-window.tutShow=function(){
-  tStep=0;
-  const el=document.getElementById('tut');
-  el.style.display='flex';
-  tutRender();
-}
-function tutRender(){
-  const s=TSTEPS[tStep];
-  document.getElementById('tut-num').textContent=`STEP ${tStep+1} / ${TSTEPS.length}`;
-  document.getElementById('tut-ttl').textContent=s.t;
-  document.getElementById('tut-txt').innerHTML=s.b;
-  document.getElementById('tut-next').textContent=s.last?'LETS GO 🔱':'NEXT →';
-  document.getElementById('tut-dots').innerHTML=TSTEPS.map((_,i)=>`<div class="tut-dot ${i===tStep?'on':''}"></div>`).join('');
-}
-window.tutNext=()=>{
-  tStep++;
-  if(tStep>=TSTEPS.length) tutSkip();
-  else tutRender();
-};
-window.tutSkip=()=>{
-  document.getElementById('tut').style.display='none';
-  localStorage.setItem('tut_done_v2','1');
-};
-// ===== END TUTORIAL =====
+// Load leaderboard on more tab
+const origRenderMore = renderMore;
 
 function toast(msg){
   const el=document.getElementById('toast');
   el.textContent=msg;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),2200);
 }
+</script>
 
-// Load leaderboard on more tab
-const origRenderMore = renderMore;
+<script>
+// TUTORIAL — plain script, not module
+var TSTEPS=[
+  {t:'WELCOME, SOLDIER',b:'This is your <b>daily discipline system</b>. Every day you WIN or FAIL. No grey area. No excuses.'},
+  {t:'DAILY HABITS',b:'Open <b>HABITS</b> every morning. Complete all 5 non-negotiables. <b>Miss one = automatic FAIL.</b>'},
+  {t:'PROOF MODE',b:'<b>No proof = task doesn\'t count.</b> After training upload a photo. After work screenshot progress. Truth only.'},
+  {t:'XP & RANKS',b:'Every action earns <b>XP</b>. Save habits = XP awarded. Start as <b>💀 Broke Boy</b>. Reach <b>🦇 Legend</b> at 10,000 XP.'},
+  {t:'HARD MODE',b:'<b>2 random days per week</b> are Hard Mode. 0 social media, extra workout, +1 mission. System picks — not you.'},
+  {t:'LEADERBOARD',b:'Send the app link to friends. They sign up and appear on the leaderboard. Compete on XP. <b>Weakness is visible.</b>'},
+  {t:'PUNISHMENT',b:'Fail the day? <b>Cold shower. No gaming. Extra workout.</b> Open NIGHT REVIEW to log it. Failure must cost something.'},
+  {t:'NOW EXECUTE.',b:'Stop reading. <b>Open HABITS, set your wake time, start your first day.</b> Clock is already running.',last:true},
+];
+var tStep=0;
+
+function tutRender(){
+  var s=TSTEPS[tStep];
+  document.getElementById('tut-num').textContent='STEP '+(tStep+1)+' / '+TSTEPS.length;
+  document.getElementById('tut-ttl').textContent=s.t;
+  document.getElementById('tut-txt').innerHTML=s.b;
+  document.getElementById('tut-next').textContent=s.last?'LETS GO 🔱':'NEXT →';
+  var dots='';
+  for(var i=0;i<TSTEPS.length;i++) dots+='<div class="tut-dot'+(i===tStep?' on':'')+'"></div>';
+  document.getElementById('tut-dots').innerHTML=dots;
+}
+
+function tutShow(){
+  tStep=0;
+  document.getElementById('tut').style.display='flex';
+  tutRender();
+}
+
+function tutNext(){
+  tStep++;
+  if(tStep>=TSTEPS.length) tutSkip();
+  else tutRender();
+}
+
+function tutSkip(){
+  document.getElementById('tut').style.display='none';
+  localStorage.setItem('tut_done_v2','1');
+}
 </script>
 </body>
 </html>
