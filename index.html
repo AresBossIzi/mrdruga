@@ -227,11 +227,8 @@ input[type=file]{display:none;}
 .loading{text-align:center;padding:30px;font-family:'Courier New',monospace;font-size:12px;color:#bbb;letter-spacing:2px;}
 
 /* ===== TUTORIAL ===== */
-#tutorial{position:fixed;inset:0;z-index:6000;pointer-events:none;opacity:0;transition:opacity 0.3s;}
-#tutorial.show{opacity:1;pointer-events:all;}
-#tut-backdrop{position:absolute;inset:0;pointer-events:all;}
-.tut-spotlight{position:absolute;border-radius:12px;border:2px solid var(--gold);z-index:6001;pointer-events:none;transition:all 0.4s cubic-bezier(0.4,0,0.2,1);box-shadow:0 0 0 2px var(--gold),0 0 20px rgba(200,168,75,0.4);}
-.tut-card{position:absolute;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:20px;max-width:300px;width:85vw;box-shadow:0 8px 32px rgba(0,0,0,0.8);z-index:6002;}
+#tutorial{display:none;position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,0.85);}
+.tut-card{position:absolute;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:20px;max-width:300px;width:85vw;box-shadow:0 8px 32px rgba(0,0,0,0.8);left:50%;top:50%;transform:translate(-50%,-50%);}
 .tut-step{font-size:9px;font-family:'Courier New',monospace;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
 .tut-title{font-family:Impact,'Arial Narrow',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;margin-bottom:8px;line-height:1.1;}
 .tut-body{font-size:13px;color:#ccc;line-height:1.65;margin-bottom:16px;}
@@ -242,6 +239,8 @@ input[type=file]{display:none;}
 .tut-dot.active{background:var(--gold);}
 .tut-btn{background:var(--gold);color:#050505;border:none;border-radius:8px;padding:10px 20px;font-family:Impact,'Arial Narrow',sans-serif;font-size:15px;letter-spacing:2px;cursor:pointer;}
 .tut-skip{background:none;border:none;color:#555;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;padding:4px;}
+.tut-spotlight{display:none;}
+#tut-backdrop{display:none;}
 
 /* XP POP */
 @keyframes xpPop{0%{opacity:0;transform:translateY(0);}20%{opacity:1;}80%{opacity:1;transform:translateY(-30px);}100%{opacity:0;transform:translateY(-50px);}}
