@@ -457,6 +457,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+// expose to plain scripts
+window._fbDb = db;
+window._fbDoc = doc;
+window._fbSetDoc = setDoc;
 
 const BAT=`<svg viewBox="0 0 100 55" xmlns="http://www.w3.org/2000/svg"><path d="M50 10 C50 10 35 0 20 8 C10 13 5 20 0 18 C8 25 15 22 18 28 C12 32 8 40 10 50 C16 42 22 38 28 40 C32 42 36 48 40 52 C42 48 44 42 50 40 C56 42 58 48 60 52 C64 48 68 42 72 40 C78 38 84 42 90 50 C92 40 88 32 82 28 C85 22 92 25 100 18 C95 20 90 13 80 8 C65 0 50 10 50 10Z" fill="#C8A84B"/></svg>`;
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -517,8 +521,13 @@ window.handleAuth = async () => {
 onAuthStateChanged(auth, async (user) => {
   if(user){
     currentUser = user;
+    localStorage.setItem('mrdruga_uid', user.uid);
     const snap = await getDoc(doc(db,'users',user.uid));
-    if(snap.exists()) username = snap.data().username;
+    if(snap.exists()){
+      username = snap.data().username;
+      // check tutorial from Firebase
+      if(snap.data().tutDone) localStorage.setItem('mrdruga_tut_v1','1');
+    }
     else username = user.email.split('@')[0];
 
     // HARD RESET — clears everything, runs once
@@ -1572,7 +1581,7 @@ function toast(msg){
     var app = document.getElementById('app');
     if(app && !app.classList.contains('hidden')){
       clearInterval(interval);
-      var done = localStorage.getItem(KEY);
+      var done = localStorage.getItem(KEY) || sessionStorage.getItem(KEY);
       if(!shown && !done){
         shown = true;
         setTimeout(tutShow, 800);
@@ -1605,10 +1614,10 @@ function tutRender(){
 
 function tutShow(){
   tStep=0;
+  localStorage.setItem('mrdruga_tut_v1','1');
   document.getElementById('tut').style.display='flex';
   tutRender();
 }
-
 function tutNext(){
   tStep++;
   if(tStep>=TSTEPS.length) tutSkip();
@@ -1618,6 +1627,11 @@ function tutNext(){
 function tutSkip(){
   document.getElementById('tut').style.display='none';
   localStorage.setItem('mrdruga_tut_v1','1');
+  // save to Firebase so it persists across reinstalls
+  var uid = localStorage.getItem('mrdruga_uid');
+  if(uid && window._fbDb && window._fbSetDoc && window._fbDoc){
+    window._fbSetDoc(window._fbDoc(window._fbDb,'users',uid),{tutDone:true},{merge:true}).catch(function(){});
+  }
 }
 </script>
 </body>
