@@ -1134,6 +1134,8 @@ function renderReview(){
 }
 
 function renderMore(){
+  // auto-load tab content after DOM renders
+  setTimeout(()=>setMoreTab(moreTab),50);
   return`
   <div class="bat-header"><div class="bat-logo"><div class="bat-symbol">${BAT}</div><div><div class="bat-name">Mr. <span>Druga</span></div><div class="bat-sub">COMMAND CENTER</div></div></div></div>
   <div class="stabs">
@@ -1153,7 +1155,11 @@ window.setMoreTab = async (t) => {
   });
   const el=document.getElementById('more-body');
   if(!el)return;
-  if(t==='leaderboard'){el.innerHTML='<div class="loading">LOADING...</div>';el.innerHTML=await renderLeaderboard();}
+  if(t==='leaderboard'){
+    el.innerHTML='<div class="loading">LOADING...</div>';
+    const html=await renderLeaderboard();
+    el.innerHTML=html;
+  }
   else if(t==='profile')el.innerHTML=renderProfile();
   else if(t==='coldcalls')el.innerHTML=renderColdCalls();
   else if(t==='weekly')el.innerHTML=renderWeekly();
@@ -1411,7 +1417,22 @@ window.handleProof=(k,input)=>{
   if(!input.files||!input.files[0])return;
   if(state.proof[k]){toast('⚠️ Proof already locked');return;}
   const r=new FileReader();
-  r.onload=e=>{state.proof[k]=e.target.result;saveState();toast('✓ Proof locked');render();};
+  r.onload=e=>{
+    state.proof[k]=e.target.result;
+    saveState();
+    toast('✓ Proof locked');
+    // update proof zone in place without full re-render
+    const zones=document.querySelectorAll(`.proof-zone`);
+    zones.forEach(z=>{
+      if(z.getAttribute('onclick')&&z.getAttribute('onclick').includes(`'${k}'`)){
+        z.classList.add('locked');
+        z.querySelector('.p-icon').textContent='✅';
+        z.querySelector('.p-text').textContent='PROOF LOCKED';
+        const img=z.querySelector('.proof-preview');
+        if(img){img.src=e.target.result;img.classList.add('show');}
+      }
+    });
+  };
   r.readAsDataURL(input.files[0]);
 };
 
