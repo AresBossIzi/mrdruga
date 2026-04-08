@@ -535,7 +535,7 @@ onAuthStateChanged(auth, async (user) => {
     if(!localStorage.getItem(RESET_KEY)){
       // nuke all old XP flags
       Object.keys(localStorage).forEach(k=>{
-        if(k.startsWith('xp_')||k==='lifetime_xp'||k==='lastRankIdx'){
+        if(k==='lifetime_xp'||k==='lastRankIdx'){
           localStorage.removeItem(k);
         }
       });
@@ -1433,11 +1433,16 @@ window.setMission=(i,v)=>{state.missions[i]=v;saveState();};
 window.toggleMission=(i)=>{
   state.missionsDone[i]=!state.missionsDone[i];
   playSound(state.missionsDone[i]?'check':'no');
-  saveState();render();
-  setTimeout(()=>{
-    const checks=document.querySelectorAll('.m-check');
-    if(checks[i]){checks[i].classList.add('bounce');setTimeout(()=>checks[i].classList.remove('bounce'),500);}
-  },10);
+  saveState();
+  // update checkbox in place
+  const checks=document.querySelectorAll('.m-check');
+  const texts=document.querySelectorAll('.m-text');
+  if(checks[i]){
+    checks[i].classList.toggle('done',state.missionsDone[i]);
+    checks[i].classList.add('bounce');
+    setTimeout(()=>checks[i].classList.remove('bounce'),500);
+  }
+  if(texts[i]) texts[i].classList.toggle('done',state.missionsDone[i]);
 };
 window.setTrade=(k,v)=>{state.trading[k]=v;saveState();};
 window.setPhys=(k,v)=>{
@@ -1499,7 +1504,21 @@ window.confirmWake=()=>{
     playSound('no');
     toast(`❌ Woke up late (${fmt(ah,am)} vs target ${state.wakeUp.target})`);
   }
-  saveState();render();
+  saveState();
+  // update wake UI in place without full re-render
+  const wakeSubEl = document.querySelector('.wake-sub');
+  if(wakeSubEl) wakeSubEl.textContent = state.wakeUp.confirmed ? 'CONFIRMED ✓' : 'FAILED ✗';
+  const imupBtn = document.querySelector('.imup-btn');
+  if(imupBtn) imupBtn.style.display='none';
+  const wakeCard = document.querySelector('.wake-big')?.parentElement;
+  if(wakeCard){
+    const existing = wakeCard.querySelector('.wake-status');
+    if(existing) existing.remove();
+    const div = document.createElement('div');
+    div.className = 'wake-status '+(state.wakeUp.confirmed?'ok':'fail');
+    div.textContent = state.wakeUp.confirmed ? '✓ CONFIRMED AT '+state.wakeUp.confirmedAt : '✗ FAILED';
+    wakeCard.appendChild(div);
+  }
 };
 
 window.trigProof=(k)=>{const el=document.getElementById('pf_'+k);if(el)el.click();};
@@ -1525,25 +1544,25 @@ window.handleProof=(k,input)=>{
 };
 
 window.saveAll=()=>{
-  // award XP once per day for completed actions
-  const todayXpKey='xp_awarded_'+todayKey();
-  if(!localStorage.getItem(todayXpKey)){
-    let earned=0;
-    if(state.nonNeg.wake===true)earned+=XP_ACTIONS.wake;
-    if(state.nonNeg.train===true)earned+=XP_ACTIONS.train;
-    if(state.nonNeg.trade===true)earned+=XP_ACTIONS.trade;
-    if(state.nonNeg.content===true)earned+=XP_ACTIONS.content;
-    if(state.nonNeg.missions===true)earned+=XP_ACTIONS.missions;
-    if(state.trading.followed===true)earned+=XP_ACTIONS.followedStrategy;
-    if(state.physical.done===true)earned+=XP_ACTIONS.trainingDone;
-    if(state.physical.pushed===true)earned+=XP_ACTIONS.pushedComfort;
-    if(isWin())earned+=XP_ACTIONS.dayWin;
-    if(state.hardMode&&isWin())earned+=XP_ACTIONS.hardModeWin;
-    if(state.proof.train)earned+=XP_ACTIONS.proof;
-    if(earned>0){
-      addXP(earned);
-      localStorage.setItem(todayXpKey,'1');
-    }
+  // calculate XP for today based on current state
+  // compare to last saved XP to award only the difference
+  const xpStateKey='xp_state_'+todayKey();
+  const lastState=JSON.parse(localStorage.getItem(xpStateKey)||'{}');
+  let earned=0;
+  if(state.nonNeg.wake===true&&!lastState.wake){earned+=XP_ACTIONS.wake;lastState.wake=true;}
+  if(state.nonNeg.train===true&&!lastState.train){earned+=XP_ACTIONS.train;lastState.train=true;}
+  if(state.nonNeg.trade===true&&!lastState.trade){earned+=XP_ACTIONS.trade;lastState.trade=true;}
+  if(state.nonNeg.content===true&&!lastState.content){earned+=XP_ACTIONS.content;lastState.content=true;}
+  if(state.nonNeg.missions===true&&!lastState.missions){earned+=XP_ACTIONS.missions;lastState.missions=true;}
+  if(state.trading.followed===true&&!lastState.followed){earned+=XP_ACTIONS.followedStrategy;lastState.followed=true;}
+  if(state.physical.done===true&&!lastState.physDone){earned+=XP_ACTIONS.trainingDone;lastState.physDone=true;}
+  if(state.physical.pushed===true&&!lastState.pushed){earned+=XP_ACTIONS.pushedComfort;lastState.pushed=true;}
+  if(state.proof.train&&!lastState.proof){earned+=XP_ACTIONS.proof;lastState.proof=true;}
+  if(isWin()&&!lastState.dayWin){earned+=XP_ACTIONS.dayWin;lastState.dayWin=true;}
+  if(state.hardMode&&isWin()&&!lastState.hardWin){earned+=XP_ACTIONS.hardModeWin;lastState.hardWin=true;}
+  if(earned>0){
+    addXP(earned);
+    localStorage.setItem(xpStateKey,JSON.stringify(lastState));
   }
   saveState();
   playSound('save');
