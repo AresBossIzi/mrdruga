@@ -293,10 +293,10 @@ input[type=file]{display:none;}
 .card *{pointer-events:auto;}
 
 /* ===== HABIT ROW FLASH ===== */
-@keyframes greenFlash{0%{background:transparent;}40%{background:rgba(60,200,122,0.18);}100%{background:transparent;}}
-@keyframes redFlash{0%{background:transparent;}40%{background:rgba(224,68,68,0.18);}100%{background:transparent;}}
-.binary-row.flash-yes{animation:greenFlash 0.5s ease;}
-.binary-row.flash-no{animation:redFlash 0.5s ease;}
+@keyframes greenFlash{0%{background:transparent;}50%{background:rgba(60,200,122,0.1);}100%{background:transparent;}}
+@keyframes redFlash{0%{background:transparent;}50%{background:rgba(224,68,68,0.1);}100%{background:transparent;}}
+.binary-row.flash-yes{animation:greenFlash 0.4s ease;}
+.binary-row.flash-no{animation:redFlash 0.4s ease;}
 
 /* ===== MISSION CHECK BOUNCE ===== */
 @keyframes checkBounce{0%{transform:scale(1);}40%{transform:scale(1.35);}70%{transform:scale(0.9);}100%{transform:scale(1);}}
@@ -522,11 +522,15 @@ setTimeout(()=>{
   }
 }, 6000);
 
-// Reset inflated XP from old version
-if(!localStorage.getItem('xp_rebalanced_v2')){
+// Reset inflated XP from old version — ALL users
+if(!localStorage.getItem('xp_rebalanced_v3')){
   localStorage.setItem('lifetime_xp','0');
-  localStorage.setItem('xp_rebalanced_v2','1');
+  localStorage.setItem('xp_rebalanced_v3','1');
   localStorage.setItem('lastRankIdx','0');
+  // also reset in Firebase for this user
+  if(currentUser){
+    setDoc(doc(db,'users',currentUser.uid),{totalXP:0,badges:[]},{merge:true}).catch(()=>{});
+  }
 }
 
 // SOUND EFFECTS using Web Audio API (no files needed)
@@ -945,7 +949,7 @@ function render(){
     case 'habits':s.innerHTML=renderHabits();break;
     case 'trade':s.innerHTML=renderTrade();break;
     case 'review':s.innerHTML=renderReview();break;
-    case 'more':s.innerHTML=renderMore();break;
+    case 'more':s.innerHTML=renderMore();loadMoreAsync();break;
   }
   const fill=document.querySelector('.ring-fill');
   if(fill){const{pts,total}=calcScore();const r=33,c=2*Math.PI*r;fill.style.strokeDasharray=c;fill.style.strokeDashoffset=c*(1-pts/total);}
@@ -1059,10 +1063,10 @@ function renderHabits(){
     ${[{k:'train',l:'Training proof',s:'Mirror pic / gym selfie'},{k:'work',l:'Work proof',s:'Progress screenshot'},{k:'shower',l:'Cold shower proof',s:'If punishment active'}].map(p=>`
       <div style="margin-bottom:12px">
         <div class="b-label" style="margin-bottom:2px">${p.l}</div><div class="b-sub" style="margin-bottom:5px">${p.s}</div>
-        <div class="proof-zone ${state.proof[p.k]?'locked':''}" onclick="trigProof('${p.k}')">
-          <div class="p-icon">${state.proof[p.k]?'✅':'📷'}</div>
-          <div class="p-text">${state.proof[p.k]?'PROOF LOCKED':'TAP TO UPLOAD'}</div>
-          <img class="proof-preview ${state.proof[p.k]?'show':''}" src="${state.proof[p.k]||'#'}">
+        <div class="proof-zone ${state.proof[p.k]?'locked':''}" id="proof-zone-${p.k}" onclick="trigProof('${p.k}')">
+          <div class="p-icon" id="proof-icon-${p.k}">${state.proof[p.k]?'✅':'📷'}</div>
+          <div class="p-text" id="proof-text-${p.k}">${state.proof[p.k]?'PROOF LOCKED':'TAP TO UPLOAD'}</div>
+          <img class="proof-preview ${state.proof[p.k]?'show':''}" id="proof-img-${p.k}" src="${state.proof[p.k]||''}">
         </div>
         <input type="file" id="pf_${p.k}" accept="image/*,video/*" onchange="handleProof('${p.k}',this)">
       </div>`).join('')}
@@ -1134,16 +1138,24 @@ function renderReview(){
 }
 
 function renderMore(){
-  // auto-load tab content after DOM renders
-  setTimeout(()=>setMoreTab(moreTab),50);
   return`
   <div class="bat-header"><div class="bat-logo"><div class="bat-symbol">${BAT}</div><div><div class="bat-name">Mr. <span>Druga</span></div><div class="bat-sub">COMMAND CENTER</div></div></div></div>
   <div class="stabs">
     ${[{id:'profile',l:'👤 Profile'},{id:'leaderboard',l:'🏆 Board'},{id:'coldcalls',l:'📞 Calls'},{id:'weekly',l:'📊 Weekly'},{id:'identity',l:'🔥 Identity'}].map(t=>`<button class="stab ${moreTab===t.id?'active':''}" onclick="setMoreTab('${t.id}')">${t.l}</button>`).join('')}
   </div>
-  <div id="more-body"><div class="loading">LOADING...</div></div>
+  <div id="more-body">${moreTab==='profile'?renderProfile():moreTab==='coldcalls'?renderColdCalls():moreTab==='weekly'?renderWeekly():moreTab==='identity'?renderIdentity():'<div class="loading">LOADING...</div>'}</div>
   <button class="logout-btn" onclick="doLogout()">SIGN OUT</button>
   <div class="spacer"></div>`;
+}
+
+// Called after renderMore for async tabs
+function loadMoreAsync(){
+  if(moreTab==='leaderboard'){
+    renderLeaderboard().then(html=>{
+      const el=document.getElementById('more-body');
+      if(el)el.innerHTML=html;
+    });
+  }
 }
 
 window.setMoreTab = async (t) => {
@@ -1158,9 +1170,9 @@ window.setMoreTab = async (t) => {
   if(t==='leaderboard'){
     el.innerHTML='<div class="loading">LOADING...</div>';
     const html=await renderLeaderboard();
-    el.innerHTML=html;
-  }
-  else if(t==='profile')el.innerHTML=renderProfile();
+    const el2=document.getElementById('more-body');
+    if(el2)el2.innerHTML=html;
+  } else if(t==='profile')el.innerHTML=renderProfile();
   else if(t==='coldcalls')el.innerHTML=renderColdCalls();
   else if(t==='weekly')el.innerHTML=renderWeekly();
   else if(t==='identity')el.innerHTML=renderIdentity();
@@ -1421,17 +1433,15 @@ window.handleProof=(k,input)=>{
     state.proof[k]=e.target.result;
     saveState();
     toast('✓ Proof locked');
-    // update proof zone in place without full re-render
-    const zones=document.querySelectorAll(`.proof-zone`);
-    zones.forEach(z=>{
-      if(z.getAttribute('onclick')&&z.getAttribute('onclick').includes(`'${k}'`)){
-        z.classList.add('locked');
-        z.querySelector('.p-icon').textContent='✅';
-        z.querySelector('.p-text').textContent='PROOF LOCKED';
-        const img=z.querySelector('.proof-preview');
-        if(img){img.src=e.target.result;img.classList.add('show');}
-      }
-    });
+    // update directly by ID — no re-render needed
+    const zone=document.getElementById('proof-zone-'+k);
+    const icon=document.getElementById('proof-icon-'+k);
+    const text=document.getElementById('proof-text-'+k);
+    const img=document.getElementById('proof-img-'+k);
+    if(zone){zone.classList.add('locked');zone.onclick=null;}
+    if(icon)icon.textContent='✅';
+    if(text)text.textContent='PROOF LOCKED';
+    if(img){img.src=e.target.result;img.classList.add('show');}
   };
   r.readAsDataURL(input.files[0]);
 };
