@@ -329,11 +329,37 @@ input[type=file]{display:none;}
 @keyframes firePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}
 .fire-pulse{display:inline-block;animation:firePulse 0.8s ease-in-out infinite;}
 
-/* ===== SCORE RING COUNT UP ===== */
-.ring-fill{fill:none;stroke:var(--gold);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1);}
+/* ===== TUTORIAL ===== */
+#tut{position:fixed;inset:0;z-index:9000;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.88);padding:24px;}
+#tut.on{display:flex;}
+.tut-inner{background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:26px 22px;width:100%;max-width:320px;}
+.tut-num{font-size:9px;font-family:'Courier New',monospace;color:var(--gold);letter-spacing:2px;margin-bottom:10px;}
+.tut-ttl{font-family:Impact,'Arial Narrow',sans-serif;font-size:24px;letter-spacing:2px;color:#fff;margin-bottom:10px;line-height:1.1;}
+.tut-txt{font-size:14px;color:#ccc;line-height:1.7;margin-bottom:20px;}
+.tut-txt b{color:#fff;}
+.tut-row{display:flex;align-items:center;justify-content:space-between;}
+.tut-dots{display:flex;gap:5px;}
+.tut-dot{width:7px;height:7px;border-radius:50%;background:#333;}
+.tut-dot.on{background:var(--gold);}
+.tut-next{background:var(--gold);color:#050505;border:none;border-radius:8px;padding:11px 22px;font-family:Impact,'Arial Narrow',sans-serif;font-size:16px;letter-spacing:2px;cursor:pointer;}
+.tut-skip{background:none;border:none;color:#555;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;}
 </style>
 </head>
 <body>
+
+<!-- TUTORIAL -->
+<div id="tut">
+  <div class="tut-inner">
+    <div class="tut-num" id="tut-num">STEP 1 / 8</div>
+    <div class="tut-ttl" id="tut-ttl"></div>
+    <div class="tut-txt" id="tut-txt"></div>
+    <div class="tut-row">
+      <button class="tut-skip" onclick="tutSkip()">SKIP</button>
+      <div class="tut-dots" id="tut-dots"></div>
+      <button class="tut-next" id="tut-next" onclick="tutNext()">NEXT →</button>
+    </div>
+  </div>
+</div>
 
 <!-- LOADING SCREEN -->
 <div id="loading-screen">
@@ -526,7 +552,9 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     render();
-
+    if(!localStorage.getItem('tut_done')){
+      setTimeout(()=>tutShow(), 800);
+    }
     const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
     const xp=calcTotalXP();
     const newRankIdx=getRankIdx(streak,wins,xp);
@@ -1528,6 +1556,43 @@ window.doLogout=async()=>{
   state={};
   toast('Signed out');
 };
+
+// ===== TUTORIAL =====
+const TSTEPS=[
+  {t:'WELCOME, SOLDIER',b:'This is your <b>daily discipline system</b>. Every day you WIN or FAIL. No grey area. No excuses. Tap NEXT to learn how it works.'},
+  {t:'DAILY HABITS',b:'Open <b>HABITS</b> every morning. Complete all 5 non-negotiables — wake up, train, trade, learn, missions. <b>Miss one = automatic FAIL.</b>'},
+  {t:'PROOF MODE',b:'<b>No proof = task doesn\'t count.</b> After training, upload a photo. After work, screenshot your progress. Truth only.'},
+  {t:'XP & RANKS',b:'Every action earns <b>XP</b>. Save habits = XP awarded. You start as <b>💀 Broke Boy</b>. Grind to <b>🦇 Legend</b> at 10,000 XP.'},
+  {t:'HARD MODE',b:'<b>2 random days per week</b> are Hard Mode. 0 social media, extra workout, +1 mission. The system picks the days — not you.'},
+  {t:'LEADERBOARD',b:'Send the app link to your friends. They sign up and appear on the leaderboard. Compete on XP and rank. <b>Weakness is visible.</b>'},
+  {t:'PUNISHMENT SYSTEM',b:'Fail the day? <b>Cold shower. No gaming. Extra workout.</b> Open NIGHT REVIEW to log it. Failure must cost something.'},
+  {t:'NOW EXECUTE.',b:'Stop reading. <b>Open HABITS, set your wake time, start your first day.</b> The clock is already running. No excuses.',last:true},
+];
+let tStep=0;
+
+function tutShow(){
+  tStep=0;
+  document.getElementById('tut').classList.add('on');
+  tutRender();
+}
+function tutRender(){
+  const s=TSTEPS[tStep];
+  document.getElementById('tut-num').textContent=`STEP ${tStep+1} / ${TSTEPS.length}`;
+  document.getElementById('tut-ttl').textContent=s.t;
+  document.getElementById('tut-txt').innerHTML=s.b;
+  document.getElementById('tut-next').textContent=s.last?'LETS GO 🔱':'NEXT →';
+  document.getElementById('tut-dots').innerHTML=TSTEPS.map((_,i)=>`<div class="tut-dot ${i===tStep?'on':''}"></div>`).join('');
+}
+window.tutNext=()=>{
+  tStep++;
+  if(tStep>=TSTEPS.length) tutSkip();
+  else tutRender();
+};
+window.tutSkip=()=>{
+  document.getElementById('tut').classList.remove('on');
+  localStorage.setItem('tut_done','1');
+};
+// ===== END TUTORIAL =====
 
 function toast(msg){
   const el=document.getElementById('toast');
