@@ -351,10 +351,9 @@ input[type=file]{display:none;}
 <body>
 
 <!-- TUTORIAL -->
-<div id="tutorial" style="display:none">
-  <canvas id="tut-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:all;" onclick="nextTutStep()"></canvas>
-  <div class="tut-spotlight" id="tut-spotlight" style="display:none"></div>
-  <div class="tut-card" id="tut-card">
+<div id="tutorial" style="display:none;position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,0.85);">
+  <div style="position:absolute;inset:0;" onclick="nextTutStep()"></div>
+  <div class="tut-card" id="tut-card" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6001;">
     <div class="tut-step" id="tut-step">STEP 1 / 8</div>
     <div class="tut-title" id="tut-title">WELCOME</div>
     <div class="tut-body" id="tut-body"></div>
@@ -702,39 +701,6 @@ function startTutorial(){
   showTutStep();
 }
 
-function drawTutCanvas(rect){
-  const canvas=document.getElementById('tut-canvas');
-  if(!canvas)return;
-  canvas.width=window.innerWidth;
-  canvas.height=window.innerHeight;
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='rgba(0,0,0,0.82)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  if(rect){
-    // cut a hole
-    ctx.globalCompositeOperation='destination-out';
-    ctx.beginPath();
-    const pad=8;
-    const r=12;
-    const x=rect.left-pad,y=rect.top-pad,w=rect.width+pad*2,h=rect.height+pad*2;
-    ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
-    ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
-    ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
-    ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
-    ctx.closePath();ctx.fill();
-    ctx.globalCompositeOperation='source-over';
-    // gold border around hole
-    ctx.strokeStyle='#C8A84B';ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
-    ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
-    ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
-    ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
-    ctx.closePath();ctx.stroke();
-  }
-}
-
 function showTutStep(){
   const step=TUT_STEPS[tutStep];
   const total=TUT_STEPS.length;
@@ -745,26 +711,6 @@ function showTutStep(){
   if(btn)btn.textContent=step.last?'LETS GO 🔱':'NEXT →';
   const dots=document.getElementById('tut-dots');
   if(dots)dots.innerHTML=TUT_STEPS.map((_,i)=>`<div class="tut-dot ${i===tutStep?'active':''}"></div>`).join('');
-  const card=document.getElementById('tut-card');
-  if(!card)return;
-
-  if(step.target){
-    const el=document.getElementById(step.target);
-    if(el){
-      const rect=el.getBoundingClientRect();
-      drawTutCanvas(rect);
-      const spaceAbove=rect.top;
-      if(spaceAbove>240){
-        card.style.cssText=`position:absolute;left:50%;transform:translateX(-50%);bottom:${window.innerHeight-rect.top+20}px;z-index:6002;`;
-      } else {
-        card.style.cssText=`position:absolute;left:50%;transform:translateX(-50%);top:${rect.bottom+20}px;z-index:6002;`;
-      }
-      return;
-    }
-  }
-  // center — no spotlight
-  drawTutCanvas(null);
-  card.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6002;';
 }
 
 window.nextTutStep=()=>{
