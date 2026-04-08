@@ -1106,8 +1106,7 @@ function renderHabits(){
         <div class="b-label" style="margin-bottom:2px">${p.l}</div><div class="b-sub" style="margin-bottom:5px">${p.s}</div>
         <div class="proof-zone ${state.proof[p.k]?'locked':''}" id="proof-zone-${p.k}" onclick="trigProof('${p.k}')">
           <div class="p-icon" id="proof-icon-${p.k}">${state.proof[p.k]?'✅':'📷'}</div>
-          <div class="p-text" id="proof-text-${p.k}">${state.proof[p.k]?'PROOF LOCKED':'TAP TO UPLOAD'}</div>
-          <img class="proof-preview ${state.proof[p.k]?'show':''}" id="proof-img-${p.k}" src="${state.proof[p.k]||''}">
+          <div class="p-text" id="proof-text-${p.k}">${state.proof[p.k]?'PROOF LOCKED — SUBMITTED':'TAP TO UPLOAD'}</div>
         </div>
         <input type="file" id="pf_${p.k}" accept="image/*,video/*" onchange="handleProof('${p.k}',this)">
       </div>`).join('')}
@@ -1527,10 +1526,11 @@ window.handleProof=(k,input)=>{
   if(state.proof[k]){toast('⚠️ Proof already locked');return;}
   const r=new FileReader();
   r.onload=e=>{
-    state.proof[k]=e.target.result;
+    // save just a flag, not the full image (too large for localStorage)
+    state.proof[k]='submitted';
     saveState();
     toast('✓ Proof locked');
-    // update directly by ID — no re-render needed
+    // update UI directly
     const zone=document.getElementById('proof-zone-'+k);
     const icon=document.getElementById('proof-icon-'+k);
     const text=document.getElementById('proof-text-'+k);
@@ -1538,7 +1538,7 @@ window.handleProof=(k,input)=>{
     if(zone){zone.classList.add('locked');zone.onclick=null;}
     if(icon)icon.textContent='✅';
     if(text)text.textContent='PROOF LOCKED';
-    if(img){img.src=e.target.result;img.classList.add('show');}
+    if(img){img.src=e.target.result;img.style.display='block';}
   };
   r.readAsDataURL(input.files[0]);
 };
