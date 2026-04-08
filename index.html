@@ -552,8 +552,8 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     render();
-    // show tutorial for new users
-    if(!localStorage.getItem('tutorial_done')){
+    // show tutorial for new users or first time after update
+    if(!localStorage.getItem('tutorial_done_v2')){
       setTimeout(()=>startTutorial(), 800);
     }
     const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
@@ -734,7 +734,7 @@ window.nextTutStep=()=>{
 
 window.skipTutorial=()=>{
   document.getElementById('tutorial').classList.remove('show');
-  localStorage.setItem('tutorial_done','1');
+  localStorage.setItem('tutorial_done_v2','1');
 };
 // ===== END TUTORIAL =====
 
