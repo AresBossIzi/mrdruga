@@ -351,7 +351,7 @@ input[type=file]{display:none;}
 <body>
 
 <!-- TUTORIAL -->
-<div id="tutorial">
+<div id="tutorial" style="display:none">
   <canvas id="tut-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:all;" onclick="nextTutStep()"></canvas>
   <div class="tut-spotlight" id="tut-spotlight" style="display:none"></div>
   <div class="tut-card" id="tut-card">
@@ -696,7 +696,9 @@ let tutStep=0;
 
 function startTutorial(){
   tutStep=0;
-  document.getElementById('tutorial').classList.add('show');
+  const tut=document.getElementById('tutorial');
+  tut.style.display='block';
+  tut.classList.add('show');
   showTutStep();
 }
 
@@ -772,7 +774,9 @@ window.nextTutStep=()=>{
 };
 
 window.skipTutorial=()=>{
-  document.getElementById('tutorial').classList.remove('show');
+  const tut=document.getElementById('tutorial');
+  tut.classList.remove('show');
+  tut.style.display='none';
   localStorage.setItem('tutorial_done','1');
 };
 // ===== END TUTORIAL =====
