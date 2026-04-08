@@ -550,7 +550,9 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     render();
-    setTimeout(()=>window.tutShow(), 800);
+    if(!localStorage.getItem('tut_done_v2')){
+      setTimeout(()=>tutShow(), 800);
+    }
     const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
     const xp=calcTotalXP();
     const newRankIdx=getRankIdx(streak,wins,xp);
