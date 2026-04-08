@@ -528,15 +528,14 @@ onAuthStateChanged(auth, async (user) => {
     if(snap.exists()) username = snap.data().username;
     else username = user.email.split('@')[0];
 
-    // Reset inflated XP for everyone — runs once per device after login
-    if(!localStorage.getItem('xp_reset_v4')){
+    // Reset inflated XP for everyone — v5
+    if(!localStorage.getItem('xp_reset_v5')){
       localStorage.setItem('lifetime_xp','0');
       localStorage.setItem('lastRankIdx','0');
-      localStorage.setItem('xp_reset_v4','1');
+      localStorage.setItem('xp_reset_v5','1');
+      // also clear all daily state XP by resetting daily logs won't help
+      // just zero the stored XP and Firebase
       try{
-        // reset this user in Firebase
-        await setDoc(doc(db,'users',user.uid),{totalXP:0,badges:[]},{merge:true});
-        // reset ALL users in Firebase
         const allSnap = await getDocs(collection(db,'users'));
         const resets = [];
         allSnap.forEach(d=>{
@@ -552,8 +551,8 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     render();
-    // show tutorial for new users or first time after update
-    if(!localStorage.getItem('tutorial_done_v2')){
+    // show tutorial for everyone once after this update
+    if(!localStorage.getItem('tutorial_done_v3')){
       setTimeout(()=>startTutorial(), 800);
     }
     const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
@@ -768,7 +767,7 @@ window.nextTutStep=()=>{
 
 window.skipTutorial=()=>{
   document.getElementById('tutorial').classList.remove('show');
-  localStorage.setItem('tutorial_done_v2','1');
+  localStorage.setItem('tutorial_done_v3','1');
 };
 // ===== END TUTORIAL =====
 
@@ -999,31 +998,20 @@ const XP_ACTIONS={
 };
 
 function calcTotalXP(){
-  let xp=0;
-  const days=getWeeklyData();
-  days.forEach(d=>{
-    if(!d.nonNeg)return;
-    if(d.nonNeg.wake===true)xp+=XP_ACTIONS.wake;
-    if(d.nonNeg.train===true)xp+=XP_ACTIONS.train;
-    if(d.nonNeg.trade===true)xp+=XP_ACTIONS.trade;
-    if(d.nonNeg.content===true)xp+=XP_ACTIONS.content;
-    if(d.nonNeg.missions===true)xp+=XP_ACTIONS.missions;
-    if(d.trading&&d.trading.followed===true)xp+=XP_ACTIONS.followedStrategy;
-    if(d.physical&&d.physical.done===true)xp+=XP_ACTIONS.trainingDone;
-    if(d.physical&&d.physical.pushed===true)xp+=XP_ACTIONS.pushedComfort;
-    if(d.hardMode&&d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true))xp+=XP_ACTIONS.hardModeWin;
-    if(d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true))xp+=XP_ACTIONS.dayWin;
-    if(d.proof&&d.proof.train)xp+=XP_ACTIONS.proof;
-  });
-  // add stored lifetime XP
-  const stored=parseInt(localStorage.getItem('lifetime_xp')||'0');
-  return xp+stored;
+  // after v5 reset, XP only comes from lifetime_xp storage (earned going forward)
+  // daily log recalculation removed to prevent inflation from old data
+  return parseInt(localStorage.getItem('lifetime_xp')||'0');
 }
 
 function addXP(amount){
   const current=parseInt(localStorage.getItem('lifetime_xp')||'0');
-  localStorage.setItem('lifetime_xp',current+amount);
+  const newTotal=current+amount;
+  localStorage.setItem('lifetime_xp', newTotal);
   showXPGain(amount);
+  // sync to Firebase
+  if(currentUser){
+    setDoc(doc(db,'users',currentUser.uid),{totalXP:newTotal},{merge:true}).catch(()=>{});
+  }
 }
 
 function showXPGain(amount){
@@ -1627,11 +1615,32 @@ window.handleProof=(k,input)=>{
 };
 
 window.saveAll=()=>{
+  // award XP once per day for completed actions
+  const todayXpKey='xp_awarded_'+todayKey();
+  if(!localStorage.getItem(todayXpKey)){
+    let earned=0;
+    if(state.nonNeg.wake===true)earned+=XP_ACTIONS.wake;
+    if(state.nonNeg.train===true)earned+=XP_ACTIONS.train;
+    if(state.nonNeg.trade===true)earned+=XP_ACTIONS.trade;
+    if(state.nonNeg.content===true)earned+=XP_ACTIONS.content;
+    if(state.nonNeg.missions===true)earned+=XP_ACTIONS.missions;
+    if(state.trading.followed===true)earned+=XP_ACTIONS.followedStrategy;
+    if(state.physical.done===true)earned+=XP_ACTIONS.trainingDone;
+    if(state.physical.pushed===true)earned+=XP_ACTIONS.pushedComfort;
+    if(isWin())earned+=XP_ACTIONS.dayWin;
+    if(state.hardMode&&isWin())earned+=XP_ACTIONS.hardModeWin;
+    if(state.proof.train)earned+=XP_ACTIONS.proof;
+    if(earned>0){
+      addXP(earned);
+      localStorage.setItem(todayXpKey,'1');
+    }
+  }
   saveState();
   playSound('save');
   const streak=getStreak();
   const wins=getWeeklyData().filter(d=>d.nonNeg&&Object.values(d.nonNeg).every(v=>v===true)).length;
-  const newRankIdx=getRankIdx(streak,wins);
+  const xp=calcTotalXP();
+  const newRankIdx=getRankIdx(streak,wins,xp);
   const prevRankIdx=parseInt(localStorage.getItem('lastRankIdx')||'0');
   if(newRankIdx>prevRankIdx){showRankUp(newRankIdx);localStorage.setItem('lastRankIdx',newRankIdx);}
   else toast('✓ Saved');
