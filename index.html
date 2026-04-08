@@ -987,24 +987,13 @@ function render(){
   const s=document.getElementById('screen');
   switch(currentPage){
     case 'home':s.innerHTML=renderHome();break;
-    case 'habits':s.innerHTML=renderHabits();attachProofListeners();break;
+    case 'habits':s.innerHTML=renderHabits();break;
     case 'trade':s.innerHTML=renderTrade();break;
     case 'review':s.innerHTML=renderReview();break;
     case 'more':s.innerHTML=renderMore();loadMoreAsync();break;
   }
   const fill=document.querySelector('.ring-fill');
   if(fill){const{pts,total}=calcScore();const r=33,c=2*Math.PI*r;fill.style.strokeDasharray=c;fill.style.strokeDashoffset=c*(1-pts/total);}
-}
-
-function attachProofListeners(){
-  ['train','work','shower'].forEach(k=>{
-    const el=document.getElementById('pf_'+k);
-    if(el){
-      el.addEventListener('change',function(){
-        handleProof(k,this);
-      });
-    }
-  });
 }
 
 function renderHome(){
@@ -1115,11 +1104,24 @@ function renderHabits(){
     ${[{k:'train',l:'Training proof',s:'Mirror pic / gym selfie'},{k:'work',l:'Work proof',s:'Progress screenshot'},{k:'shower',l:'Cold shower proof',s:'If punishment active'}].map(p=>`
       <div style="margin-bottom:12px">
         <div class="b-label" style="margin-bottom:2px">${p.l}</div><div class="b-sub" style="margin-bottom:5px">${p.s}</div>
-        <div class="proof-zone ${state.proof[p.k]?'locked':''}" id="proof-zone-${p.k}" onclick="trigProof('${p.k}')">
+        <div class="proof-zone ${state.proof[p.k]?'locked':''}" id="proof-zone-${p.k}" onclick="document.getElementById('pf_${p.k}').click()">
           <div class="p-icon" id="proof-icon-${p.k}">${state.proof[p.k]?'✅':'📷'}</div>
-          <div class="p-text" id="proof-text-${p.k}">${state.proof[p.k]?'PROOF LOCKED — SUBMITTED':'TAP TO UPLOAD'}</div>
+          <div class="p-text" id="proof-text-${p.k}">${state.proof[p.k]?'PROOF LOCKED':'TAP TO UPLOAD'}</div>
         </div>
-        <input type="file" id="pf_${p.k}" accept="image/*,video/*">
+        <input type="file" id="pf_${p.k}" accept="image/*,video/*" style="display:none" onchange="
+          var k='${p.k}';
+          var files=this.files;
+          if(!files||!files[0])return;
+          var zone=document.getElementById('proof-zone-'+k);
+          var icon=document.getElementById('proof-icon-'+k);
+          var txt=document.getElementById('proof-text-'+k);
+          if(zone)zone.style.borderColor='#2db56e';
+          if(icon)icon.textContent='✅';
+          if(txt)txt.textContent='PROOF SUBMITTED ✓';
+          window._proofDone=window._proofDone||{};
+          window._proofDone[k]=true;
+          if(window.handleProofFlag)window.handleProofFlag(k);
+        ">
       </div>`).join('')}
   </div>
   <div class="card">
@@ -1529,6 +1531,12 @@ window.confirmWake=()=>{
     div.textContent = state.wakeUp.confirmed ? '✓ CONFIRMED AT '+state.wakeUp.confirmedAt : '✗ FAILED';
     wakeCard.appendChild(div);
   }
+};
+
+window.handleProofFlag=(k)=>{
+  state.proof[k]='submitted';
+  saveState();
+  toast('✓ Proof locked');
 };
 
 window.trigProof=(k)=>{const el=document.getElementById('pf_'+k);if(el)el.click();};
